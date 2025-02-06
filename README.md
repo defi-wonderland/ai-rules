@@ -1,91 +1,159 @@
-# ts-turborepo-boilerplate
+# AI Rules CLI
 
-## Features
-
-### Boilerplate monorepo setup
-
-Quickly start developing your offchain monorepo project with
-minimal configuration overhead using Turborepo
-
-### Sample library with Viem
-
-Simple provider that uses Viem client to query account balances
-
-### Sample contracts with Foundry
-
-Basic Greeter contract with an external interface
-
-Foundry configuration out-of-the-box
-
-### Sample app that consumes the library
-
-How much ETH do Vitalik and the Zero address hold together?
-
-### Testing
-
-Unit test setup with Vitest framework
-
-### Lint and format
-
-Use ESLint and Prettier to easily find issues as you code
-
-### Github workflows CI
-
-Lint code and check commit messages format on every push.
-
-Run all tests and see the coverage before merging changes.
+A command-line tool for standardizing AI configuration across teams. This tool helps manage and maintain consistent `.coderabbit.yaml` and `.cursor/rules` configurations across multiple repositories.
 
 ## Overview
 
-This repository is a monorepo consisting of 2 packages and 1 app:
+Current project setups require manual configuration of `coderabbit.yml` and `.cursor/rules` files across multiple teams. This leads to inconsistencies and missed optimizations. The CLI tool standardizes configuration while respecting team-specific best practices.
 
--   [`@ts-turborepo-boilerplate/contracts`](./packages/contracts): A library for writing all required smart contracts
--   [`@ts-turborepo-boilerplate/sample-lib`](./packages/sample-lib): A sample library for querying account balances
--   [`@ts-turborepo-boilerplate/sample-app`](./apps/sample-app): A demo sample app that uses the sample-lib
+## Features
 
-## 📋 Prerequisites
+-   Multi-team support (Offchain, Solidity, UI, Technical Writing)
+-   Preset best practice configurations
+-   Interactive prompt system with conditional flows
+-   Configuration versioning
+-   Cross-team best practices support
+-   Validation & safety checks
 
--   Ensure you have `node 20` and `pnpm 9.7.1` installed.
+## Architecture
 
-## Tech stack
-
--   [pnpm](https://pnpm.io/): package and workspace manager
--   [turborepo](https://turbo.build/repo/docs): for managing the monorepo and the build system
--   [foundry](https://book.getfoundry.sh/forge/): for writing Solidity smart contracts
--   [husky](https://typicode.github.io/husky/): tool for managing git hooks
--   tsc: for transpiling TS and building source code
--   [prettier](https://prettier.io/): code formatter
--   [eslint](https://typescript-eslint.io/): code linter
--   [vitest](https://vitest.dev/): modern testing framework
--   [Viem](https://viem.sh/): lightweight library to interface with EVM based blockchains
-
-### Configuring Prettier sort import plugin
-
-You can further add sorting rules for your monorepo, for example in `.prettierrc` you can add:
-
-```json
-    ...
-    "importOrder": [
-        "<TYPES>",
-        ...
-        "",
-        "<TYPES>^@myproject", //added
-        "^@myproject/(.*)$", //added
-        "",
-        ...
-    ],
-    ...
+```
+┌─────────────────┐
+│  CLI Command    │
+│ (oclif-based)   │
+└────────┬────────┘
+         │
+         ▼
+┌──────────────────────────┐
+│ General Tech Stack Prompt│
+│ (Multi-select: Back End, │
+│  UI, Solidity)           │
+└────────┬────────┬────────┘
+         │        │
+         ▼        ▼
+┌────────────┐  ┌─────────────┐
+│ Offchain   │  │  Solidity   │
+│ Prompt:    │  │ Prompt:     │
+│ Language   │  │ Gas Options │
+│ selection  │  │ (Yes/No)    │
+└────────────┘  └─────────────┘
+         │              │
+         ▼              ▼
+┌──────────────────────────┐
+│  Validate Answers (Zod)  │
+└────────┬────────┬────────┘
+         │
+         ▼
+┌──────────────────────────┐
+│  Generate Config Files   │
+└──────────────────────────┘
 ```
 
-We use [IanVs prettier-plugin-sort-imports](https://github.com/IanVS/prettier-plugin-sort-imports)
+## Project Structure
 
-## Available Scripts
+```
+packages/
+├── types/           # Core type definitions and schemas
+├── config/          # Configuration management
+├── prompts/         # Interactive prompt system
+├── generators/      # Configuration generators
+└── cli/            # Main CLI interface
+```
 
-### `create-package`
+## Installation
 
-The `create-package` script allows you to create a new package within the `packages` directory. It automates the setup of a new package with the necessary directory structure and initial files scaffolded.
+```bash
+# Using npm
+npm install -g @ai-rules/cli
 
-#### Usage
+# Using yarn
+yarn global add @ai-rules/cli
+
+# Using pnpm
+pnpm add -g @ai-rules/cli
+```
+
+## Usage
+
+```bash
+# Initialize new configuration
+ai-rules init
+
+# Generate configuration files
+ai-rules generate
+
+# Validate existing configuration
+ai-rules validate
+
+# Upgrade configuration version
+ai-rules upgrade
+```
+
+## Development
+
+### Prerequisites
+
+-   Node.js v.20
+-   pnpm v.9.7.1
+
+### Setup
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/defi-wonderland/ai-rules.git
+cd ai-rules
+```
+
+2. Install dependencies
+
+```bash
+pnpm install
+```
+
+3. Build all packages
+
+```bash
+pnpm build
+```
+
+### Available Scripts
+
+| Script     | Description             |
+| ---------- | ----------------------- |
+| `build`    | Build all packages      |
+| `clean`    | Clean build artifacts   |
+| `dev`      | Start development mode  |
+| `test`     | Run tests               |
+| `test:cov` | Run tests with coverage |
+| `lint`     | Run linter              |
+| `format`   | Run formatter           |
+
+### Package Structure
+
+-   `@ai-rules/types`: Core type definitions and schemas
+-   `@ai-rules/config`: Configuration management
+-   `@ai-rules/prompts`: Interactive prompt system
+-   `@ai-rules/generators`: Configuration generators
+-   `@ai-rules/cli`: Main CLI interface
+
+## Contributing
+
+Wonderland is a team of top Web3 researchers, developers, and operators who believe that the future needs to be open-source, permissionless, and decentralized.
+
+[DeFi sucks](https://defi.sucks), but Wonderland is here to make it better.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feat/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feat/amazing-feature`)
+5. Open a Pull Request
+
+### 💻 Conventional Commits
+
+We follow the Conventional Commits [specification](https://www.conventionalcommits.org/en/v1.0.0/#specification).
+
+### Creating a new package
 
 To create a new package, run the following command:
 
@@ -94,16 +162,6 @@ pnpm run create-package <package-name>
 ```
 
 Replace `<package-name>` with your desired package name. This command will generate the package directory with predefined templates and configuration files.
-
-## Contributing
-
-Wonderland is a team of top Web3 researchers, developers, and operators who believe that the future needs to be open-source, permissionless, and decentralized.
-
-[DeFi sucks](https://defi.sucks), but Wonderland is here to make it better.
-
-### 💻 Conventional Commits
-
-We follow the Conventional Commits [specification](https://www.conventionalcommits.org/en/v1.0.0/#specification).
 
 ## License
 

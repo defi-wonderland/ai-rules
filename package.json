@@ -1,12 +1,12 @@
 {
-    "name": "ts-turborepo-boilerplate",
+    "name": "@wonderland/ai-rules",
     "version": "0.0.1",
     "private": true,
-    "description": "Start your next offchain project in seconds",
-    "homepage": "https://github.com/defi-wonderland/ts-turborepo-boilerplate#readme",
+    "description": "CLI tool for standardizing AI configuration across teams",
+    "homepage": "https://github.com/defi-wonderland/ai-rules",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/defi-wonderland/ts-turborepo-boilerplate.git"
+        "url": "git+https://github.com/defi-wonderland/ai-rules.git"
     },
     "license": "MIT",
     "author": "Wonderland",
@@ -47,6 +47,7 @@
         "husky": "9.1.5",
         "lint-staged": "15.2.10",
         "prettier": "3.3.3",
+        "rimraf": "6.0.1",
         "sort-package-json": "2.10.1",
         "turbo": "2.1.1",
         "typescript": "5.5.4",
