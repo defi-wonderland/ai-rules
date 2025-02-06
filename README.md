@@ -4,7 +4,7 @@ A command-line tool for standardizing AI configuration across teams. This tool h
 
 ## Overview
 
-Current project setups require manual configuration of `code-rabbit.yml` and `.cursor/rules` files across multiple teams. This leads to inconsistencies and missed optimizations. The CLI tool standardizes configuration while respecting team-specific best practices.
+Current project setups require manual configuration of `coderabbit.yml` and `.cursor/rules` files across multiple teams. This leads to inconsistencies and missed optimizations. The CLI tool standardizes configuration while respecting team-specific best practices.
 
 ## Features
 
