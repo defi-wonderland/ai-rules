@@ -149,6 +149,10 @@ Wonderland is a team of top Web3 researchers, developers, and operators who beli
 4. Push to the branch (`git push origin feat/amazing-feature`)
 5. Open a Pull Request
 
+### 💻 Conventional Commits
+
+We follow the Conventional Commits [specification](https://www.conventionalcommits.org/en/v1.0.0/#specification).
+
 ### Creating a new package
 
 To create a new package, run the following command:
@@ -161,4 +165,4 @@ Replace `<package-name>` with your desired package name. This command will gener
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+The primary license for the boilerplate is MIT. See the [`LICENSE`](./LICENSE) file for details.

@@ -11,9 +11,6 @@
     "license": "MIT",
     "author": "Wonderland",
     "type": "module",
-    "workspaces": [
-        "packages/*"
-    ],
     "scripts": {
         "build": "turbo run build",
         "check-types": "turbo run check-types",

@@ -5,19 +5,19 @@
             "cache": false
         },
         "lint": {
-            "dependsOn": ["^build"]
+            "dependsOn": ["build"]
         },
         "lint:fix": {
-            "dependsOn": ["^build"]
+            "dependsOn": ["build"]
         },
         "format": {},
         "format:fix": {},
         "check-types": {},
         "test": {
-            "dependsOn": ["^build"]
+            "dependsOn": ["build"]
         },
         "test:cov": {
-            "dependsOn": ["^build"]
+            "dependsOn": ["build"]
         },
         "test:watch": {
             "cache": false,
