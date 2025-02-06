@@ -17,38 +17,10 @@
         "useUnknownInCatchVariables": true,
         "forceConsistentCasingInFileNames": true,
         "noImplicitOverride": true,
-        /* Need these because transpiling with TypeScript */
-        "noImplicitAny": true,
-        "noImplicitThis": true,
-        "strictNullChecks": true,
-        "strictFunctionTypes": true,
-        "strictBindCallApply": true,
-        "strictPropertyInitialization": true,
-        "alwaysStrict": true,
-        "noFallthroughCasesInSwitch": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-
-        /* Module Resolution */
+        /* Transpiling with TypeScript: */
         "module": "NodeNext",
-        "moduleResolution": "NodeNext",
-        "baseUrl": ".",
-        "paths": {
-            "@ai-rules/*": ["packages/*/src"]
-        },
-
-        /* Emit */
         "sourceMap": true,
-        "declaration": true,
-        "declarationMap": true,
-        "removeComments": false,
-        "newLine": "lf",
-
-        /* Language and Environment */
-        /* es2022 because this CLI tool does not run in the DOM */
-        "lib": ["es2022"],
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true
-    },
-    "exclude": ["**/node_modules", "**/dist"]
+        /* Code doesn't run in the DOM: */
+        "lib": ["es2022"]
+    }
 }

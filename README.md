@@ -139,11 +139,25 @@ pnpm build
 
 ## Contributing
 
+Wonderland is a team of top Web3 researchers, developers, and operators who believe that the future needs to be open-source, permissionless, and decentralized.
+
+[DeFi sucks](https://defi.sucks), but Wonderland is here to make it better.
+
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feat/amazing-feature`)
 3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
 4. Push to the branch (`git push origin feat/amazing-feature`)
 5. Open a Pull Request
+
+### Creating a new package
+
+To create a new package, run the following command:
+
+```bash
+pnpm run create-package <package-name>
+```
+
+Replace `<package-name>` with your desired package name. This command will generate the package directory with predefined templates and configuration files.
 
 ## License
 

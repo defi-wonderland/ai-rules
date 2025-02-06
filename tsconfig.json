@@ -1,11 +1,5 @@
 {
     "extends": "./tsconfig.base.json",
-    "compilerOptions": {
-        "baseUrl": ".",
-        "paths": {
-            "@ai-rules/*": ["packages/*/src"]
-        }
-    },
     "include": ["packages/*/src/**/*", "packages/*/test/**/*"],
     "exclude": ["node_modules", "**/dist"]
 }
