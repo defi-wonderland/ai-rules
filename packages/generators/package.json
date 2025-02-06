@@ -1,0 +1,30 @@
+{
+    "name": "@ai-rules/generators",
+    "version": "0.0.1",
+    "private": true,
+    "description": "Configuration generators for AI Rules CLI",
+    "license": "MIT",
+    "author": "Wonderland",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "check-types": "tsc --noEmit",
+        "clean": "rimraf dist",
+        "dev": "tsc -p tsconfig.build.json --watch",
+        "format": "prettier --check \"{src,test}/**/*.ts\"",
+        "format:fix": "prettier --write \"{src,test}/**/*.ts\"",
+        "lint": "eslint \"{src,test}/**/*.ts\"",
+        "lint:fix": "eslint --fix \"{src,test}/**/*.ts\"",
+        "test": "vitest run",
+        "test:cov": "vitest run --coverage",
+        "test:integration": "vitest run --config vitest.config.integration.ts",
+        "test:watch": "vitest watch"
+    },
+    "dependencies": {
+        "@ai-rules/config": "workspace:*",
+        "@ai-rules/types": "workspace:*",
+        "handlebars": "4.7.8"
+    }
+}

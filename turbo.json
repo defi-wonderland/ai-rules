@@ -1,38 +1,54 @@
 {
     "$schema": "https://turbo.build/schema.json",
     "tasks": {
+        "build": {
+            "dependsOn": ["^build"],
+            "outputs": ["dist/**"],
+            "inputs": ["src/**/*.ts", "src/**/*.json", "tsconfig.json", "tsconfig.build.json"]
+        },
         "clean": {
             "cache": false
         },
+        "dev": {
+            "cache": false,
+            "persistent": true
+        },
         "lint": {
-            "dependsOn": ["build"]
+            "dependsOn": ["^build"],
+            "outputs": []
         },
         "lint:fix": {
-            "dependsOn": ["build"]
+            "dependsOn": ["^build"],
+            "outputs": []
         },
-        "format": {},
-        "format:fix": {},
-        "check-types": {},
+        "format": {
+            "outputs": []
+        },
+        "format:fix": {
+            "outputs": []
+        },
+        "check-types": {
+            "dependsOn": ["^build"],
+            "outputs": []
+        },
         "test": {
-            "dependsOn": ["build"]
+            "dependsOn": ["^build"],
+            "outputs": ["coverage/**"],
+            "inputs": ["src/**/*.ts", "test/**/*.ts"]
         },
         "test:cov": {
-            "dependsOn": ["build"]
+            "dependsOn": ["^build"],
+            "outputs": ["coverage/**"],
+            "inputs": ["src/**/*.ts", "test/**/*.ts"]
         },
         "test:integration": {
-            "dependsOn": ["build"]
-        },
-        "build": {
             "dependsOn": ["^build"],
-            "outputs": ["dist/**", "out/**"],
-            "inputs": ["$TURBO_DEFAULT$", "src/**/*.ts", "src/**/*.json"]
+            "outputs": ["coverage/**"],
+            "inputs": ["src/**/*.ts", "test/**/*.ts"]
         },
-        "dev": {
-            "cache": false
-        },
-        "start": {
-            "dependsOn": ["build"]
+        "test:watch": {
+            "cache": false,
+            "persistent": true
         }
-    },
-    "globalDependencies": [".eslintrc.cjs", ".prettierrc", "**/.env", "tsconfig.json"]
+    }
 }
