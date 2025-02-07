@@ -26,7 +26,7 @@ export const OffchainLanguageConfigSchema = z.object({
     language: z.enum(["typescript", "javascript"]),
 });
 
-export type TypeScriptConfig = z.infer<typeof OffchainLanguageConfigSchema>;
+export type OffchainLanguageConfig = z.infer<typeof OffchainLanguageConfigSchema>;
 
 /**
  * Solidity-specific configuration

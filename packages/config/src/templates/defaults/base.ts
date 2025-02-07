@@ -7,13 +7,13 @@ export const baseConfig: Config = {
     version: "1.0.0",
     teams: [],
     typescript: {
-        language: "typescript",
+        language: "typescript" as const,
     },
     solidity: {
         gasOptimizations: true,
-        framework: "foundry",
+        framework: "foundry" as const,
         testing: {
-            framework: "forge",
+            framework: "forge" as const,
         },
     },
     coderabbit: {
@@ -107,4 +107,4 @@ export const baseConfig: Config = {
             pull_requests: { scope: "auto" },
         },
     },
-};
+} as const satisfies Config;

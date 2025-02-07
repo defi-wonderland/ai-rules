@@ -4,7 +4,7 @@ import { InvalidConfiguration } from "../../src/errors/base-configuration.js";
 import { MissingTeamSelection } from "../../src/errors/missing-team.js";
 
 describe("MissingTeamSelection", () => {
-    it("creates an error with the correct message", () => {
+    it("returns expected error message for missing team selection", () => {
         const error = new MissingTeamSelection();
 
         expect(error.message).toBe(

@@ -4,7 +4,7 @@ import { InvalidConfiguration } from "../../src/errors/base-configuration.js";
 import { FileGeneration } from "../../src/errors/file-generation.js";
 
 describe("FileGeneration", () => {
-    it("creates an error with the correct message", () => {
+    it("prefixes message with 'Failed to generate configuration files'", () => {
         const message = "Failed to write file";
         const error = new FileGeneration(message);
 

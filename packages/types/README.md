@@ -33,7 +33,7 @@ The package provides Zod schemas for validating configurations:
 -   `MinimalConfigSchema`: Validates the minimal required configuration
 -   `CodeRabbitConfigSchema`: Validates CodeRabbit-specific settings
 -   `SolidityConfigSchema`: Validates Solidity team configurations
--   `TypeScriptConfigSchema`: Validates TypeScript team configurations
+-   `OffchainLanguageConfigSchema`: Validates TypeScript team configurations
 
 ### Error Types
 

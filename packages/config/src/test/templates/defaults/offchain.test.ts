@@ -14,4 +14,11 @@ describe("offchainConfig", () => {
             language: "typescript",
         });
     });
+
+    it("rejects invalid language values", () => {
+        const result = OffchainLanguageConfigSchema.safeParse({
+            language: "invalid",
+        });
+        expect(result.success).toBe(false);
+    });
 });

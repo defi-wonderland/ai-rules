@@ -4,7 +4,7 @@ import { InvalidConfiguration } from "../../src/errors/base-configuration.js";
 import { InvalidValidation } from "../../src/errors/validation.js";
 
 describe("InvalidValidation", () => {
-    it("creates an error with the correct message", () => {
+    it("prefixes message with 'Configuration validation failed'", () => {
         const message = "Invalid configuration";
         const error = new InvalidValidation(message);
 

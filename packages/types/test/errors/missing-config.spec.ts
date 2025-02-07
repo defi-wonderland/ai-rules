@@ -4,7 +4,7 @@ import { InvalidConfiguration } from "../../src/errors/base-configuration.js";
 import { MissingConfiguration } from "../../src/errors/missing-config.js";
 
 describe("MissingConfiguration", () => {
-    it("creates an error with the correct message including the field name", () => {
+    it("formats error message with the specified field name", () => {
         const field = "testField";
         const error = new MissingConfiguration(field);
 
