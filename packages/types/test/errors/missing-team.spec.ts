@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ConfigurationError } from "../../src/errors/base-configuration.js";
+import { InvalidConfiguration } from "../../src/errors/base-configuration.js";
 import { MissingTeamSelection } from "../../src/errors/missing-team.js";
 
 describe("MissingTeamSelection", () => {
@@ -10,12 +10,12 @@ describe("MissingTeamSelection", () => {
         expect(error.message).toBe(
             "No team selection was provided. Please select at least one team or technology option.",
         );
-        expect(error.name).toBe("ConfigurationError");
+        expect(error.name).toBe("InvalidConfiguration");
     });
 
-    it("extends ConfigurationError", () => {
+    it("extends InvalidConfiguration", () => {
         const error = new MissingTeamSelection();
         expect(error).toBeInstanceOf(MissingTeamSelection);
-        expect(error).toBeInstanceOf(ConfigurationError);
+        expect(error).toBeInstanceOf(InvalidConfiguration);
     });
 });

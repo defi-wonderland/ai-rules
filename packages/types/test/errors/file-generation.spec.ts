@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ConfigurationError } from "../../src/errors/base-configuration.js";
+import { InvalidConfiguration } from "../../src/errors/base-configuration.js";
 import { FileGeneration } from "../../src/errors/file-generation.js";
 
 describe("FileGeneration", () => {
@@ -9,12 +9,12 @@ describe("FileGeneration", () => {
         const error = new FileGeneration(message);
 
         expect(error.message).toBe("Failed to generate configuration files: Failed to write file");
-        expect(error.name).toBe("ConfigurationError");
+        expect(error.name).toBe("InvalidConfiguration");
     });
 
-    it("extends ConfigurationError", () => {
+    it("extends InvalidConfiguration", () => {
         const error = new FileGeneration("test");
         expect(error).toBeInstanceOf(FileGeneration);
-        expect(error).toBeInstanceOf(ConfigurationError);
+        expect(error).toBeInstanceOf(InvalidConfiguration);
     });
 });

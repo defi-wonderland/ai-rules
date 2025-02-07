@@ -1,9 +1,9 @@
 /**
  * Base configuration error class for all AI Rules errors
  */
-export class ConfigurationError extends Error {
+export class InvalidConfiguration extends Error {
     constructor(message: string) {
         super(message);
-        this.name = "ConfigurationError";
+        this.name = "InvalidConfiguration";
     }
 }

@@ -34,12 +34,6 @@ src/
 -   `TemplateService` - Handles template loading and processing
 -   `ValidationService` - Validates generated configurations
 
-### Providers
-
--   `TemplateProvider` - Manages template loading and caching
--   `FileSystemProvider` - Handles file system operations
--   `GitHubProvider` - Manages GitHub-specific operations
-
 ## Usage
 
 ```typescript
@@ -62,7 +56,3 @@ await generator.generate({
 -   [ ] Implement Cursor rule templates
 -   [ ] Add template inheritance
 -   [ ] Create generator service
--   [ ] Add template validation
--   [ ] Implement file system operations
--   [ ] Add GitHub integration
--   [ ] Create template providers

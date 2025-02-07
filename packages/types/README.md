@@ -42,7 +42,7 @@ Custom error classes for specific failure scenarios:
 -   `BaseConfiguration`: Base error class for configuration-related errors
 -   `MissingConfig`: Error for missing configuration files
 -   `MissingTeam`: Error for missing team configurations
--   `ValidationError`: Error for schema validation failures
+-   `InvalidValidation`: Error for schema validation failures
 
 ## Usage
 

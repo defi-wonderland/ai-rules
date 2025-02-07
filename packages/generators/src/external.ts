@@ -15,8 +15,3 @@
 // Templates
 // TODO: Add CodeRabbit templates
 // TODO: Add Cursor rule templates
-
-// Providers
-// TODO: Add TemplateProvider
-// TODO: Add FileSystemProvider
-// TODO: Add GitHubProvider
