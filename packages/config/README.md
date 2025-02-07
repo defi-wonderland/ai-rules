@@ -10,10 +10,13 @@ This package handles all configuration-related functionality for the AI Rules CL
 
 ```
 src/
+├── interfaces/
+│   ├── index.ts                    # Exports all interfaces
+│   └── config-provider.interface.ts # Interface implementation
 ├── templates/      # Configuration templates
 │   └── defaults/   # Default configuration templates
 │       ├── base.ts        # Base configuration template
-        ├── offchain.ts    # Offchain configuration template
+│       ├── offchain.ts    # Offchain configuration template
 │       ├── solidity.ts    # Solidity team template
 │       └── index.ts       # Template exports
 ├── providers/      # Configuration providers

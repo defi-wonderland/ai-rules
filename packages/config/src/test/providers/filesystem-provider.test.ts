@@ -16,8 +16,8 @@ describe("FileSystemProvider", () => {
     const fileName = "config.json";
     let provider: FileSystemProvider;
 
-    beforeEach(() => {
-        provider = new FileSystemProvider(basePath);
+    beforeEach(async () => {
+        provider = await FileSystemProvider.create(basePath);
         vi.clearAllMocks();
     });
 

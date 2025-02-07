@@ -2,18 +2,21 @@ import type { Mock } from "vitest";
 import { mockMinimalConfig } from "@ai-rules/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { IConfigProvider } from "../../interfaces/index.js";
 import { FileSystemProvider } from "../../providers/filesystem-provider.js";
 import { ConfigurationService } from "../../services/configuration.service.js";
 
 vi.mock("../../providers/filesystem-provider", () => ({
-    FileSystemProvider: vi.fn(),
+    FileSystemProvider: {
+        create: vi.fn(),
+    },
 }));
 
 describe("ConfigurationService", () => {
     const basePath = "/test/path";
     const fileName = "config.json";
     let service: ConfigurationService;
-    let mockProvider: {
+    let mockProvider: IConfigProvider & {
         readConfig: Mock;
         writeConfig: Mock;
         exists: Mock;
@@ -26,17 +29,17 @@ describe("ConfigurationService", () => {
             exists: vi.fn(),
         };
 
-        vi.mocked(FileSystemProvider).mockImplementation(
-            () => mockProvider as unknown as FileSystemProvider,
+        vi.mocked(FileSystemProvider.create).mockResolvedValue(
+            mockProvider as unknown as FileSystemProvider,
         );
-        service = new ConfigurationService(mockProvider as unknown as FileSystemProvider);
+        service = new ConfigurationService(mockProvider);
     });
 
     describe("create", () => {
         it("creates instance with correct provider", async () => {
             const service = await ConfigurationService.create(basePath);
 
-            expect(FileSystemProvider).toHaveBeenCalledWith(basePath);
+            expect(FileSystemProvider.create).toHaveBeenCalledWith(basePath);
             expect(service).toBeInstanceOf(ConfigurationService);
         });
     });
