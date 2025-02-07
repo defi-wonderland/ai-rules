@@ -3,18 +3,11 @@
  * Public exports for the config package.
  */
 
-// TODO: Export configuration service
-// TODO: Export provider interfaces
-// TODO: Export utility functions
-
-// Services
-// TODO: Add ConfigurationService
-// TODO: Add ValidationService
-// TODO: Add MigrationService
+// Core Services
+export * from "./services/index.js";
 
 // Providers
-// TODO: Add FileSystemProvider
-// TODO: Add GitHubProvider
+export * from "./providers/index.js";
 
-// Utilities
-// TODO: Add configuration utilities
+// Configuration Templates
+export * from "./templates/defaults/index.js";
