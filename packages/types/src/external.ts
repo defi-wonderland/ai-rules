@@ -3,19 +3,11 @@
  * Public exports for the types package.
  */
 
-// TODO: Export configuration interfaces
-// TODO: Export validation schemas
-// TODO: Export error types
-// TODO: Export utility types
-
-// Configuration Types
-// TODO: Add configuration interfaces
-
-// Validation Schemas
-// TODO: Add Zod schemas
-
 // Error Types
-// TODO: Add custom error classes
+export * from "./errors/index.js";
 
-// Utility Types
-// TODO: Add utility types
+// Schemas
+export * from "./schemas/index.js";
+
+// Testing Utilities
+export { mockConfig, mockMinimalConfig } from "./schemas/config.mocks.js";

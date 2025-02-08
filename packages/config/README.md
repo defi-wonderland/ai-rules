@@ -10,55 +10,85 @@ This package handles all configuration-related functionality for the AI Rules CL
 
 ```
 src/
+├── interfaces/
+│   ├── index.ts                    # Exports all interfaces
+│   └── config-provider.interface.ts # Interface implementation
 ├── templates/      # Configuration templates
-├── providers/      # Configuration providers (GitHub, File System)
-├── services/       # Configuration services
-├── external.ts     # Public exports
-└── index.ts       # Entry point
+│   └── defaults/   # Default configuration templates
+│       ├── base.ts        # Base configuration template
+│       ├── offchain.ts    # Offchain configuration template
+│       ├── solidity.ts    # Solidity team template
+│       └── index.ts       # Template exports
+├── providers/      # Configuration providers
+│   └── filesystem-provider.ts  # File system operations
+├── services/      # Configuration services
+│   ├── configuration.service.ts  # Main configuration service
+│   └── index.ts                 # Service exports
+├── external.ts    # Public exports
+└── index.ts      # Entry point
 ```
 
 ## Key Components
 
-### Configuration Providers
+### Configuration Provider
 
--   `FileSystemProvider` - Handles local file system operations
--   `GitHubProvider` - Manages GitHub-specific configurations
--   `ConfigurationProvider` - Base provider interface
+The `FileSystemProvider` class handles all file system operations:
 
-### Configuration Services
+-   Reading configuration files
+-   Writing configuration files
+-   Checking file existence
+-   Proper error handling for file operations
 
--   `ConfigurationService` - Orchestrates configuration management
--   `ValidationService` - Handles configuration validation
--   `MigrationService` - Manages configuration versioning
+### Configuration Service
+
+The `ConfigurationService` class orchestrates configuration management:
+
+-   Static factory method for easy instantiation
+-   Configuration file reading and writing
+-   Configuration existence checking
+-   Provider-based architecture for extensibility
 
 ### Templates
 
--   Base templates for different team configurations
--   Version-specific templates
--   Team-specific overrides
+Default configuration templates for different scenarios:
+
+-   Base configuration template with common settings
+-   Team-specific templates (e.g., Solidity, Offchain)
+-   Extensible template system for future teams
 
 ## Usage
 
 ```typescript
 import { ConfigurationService } from "@ai-rules/config";
 
-const configService = await ConfigurationService.create({
-    // TODO: configuration options
+// Create a configuration service instance
+const configService = await ConfigurationService.create("/path/to/config");
+
+// Read configuration
+const config = await configService.readConfig("config.json");
+
+// Write configuration
+await configService.writeConfig("config.json", {
+    version: "1.0.0",
+    teams: ["solidity"],
+    coderabbit: {
+        // ... configuration details
+    },
 });
 
-// Generate configuration
-await configService.generateConfig({
-    teams: ["typescript", "solidity"],
-    // other options
-});
+// Check if configuration exists
+const exists = await configService.hasConfig("config.json");
 ```
 
-## TODO
+## Features
 
--   [ ] Implement configuration providers
--   [ ] Create configuration service
--   [ ] Add validation service
--   [ ] Create base templates
--   [ ] Add version migration support
+-   ✅ File system-based configuration management
+-   ✅ Static factory pattern for service creation
+-   ✅ Default configuration templates
+-   ✅ Error handling with custom error types
+-   ✅ Provider-based architecture for extensibility
+
+## TODO:
+
 -   [ ] Implement configuration merging
--   [ ] Add configuration backup functionality
+-   [ ] Add configuration migration support
