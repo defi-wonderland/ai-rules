@@ -2,7 +2,7 @@
     "name": "@ai-rules/config",
     "version": "0.0.1",
     "private": true,
-    "description": "Configuration management for AI Rules CLI",
+    "description": "Configuration management for the AI Rules script",
     "license": "MIT",
     "author": "Wonderland",
     "type": "module",
@@ -24,5 +24,8 @@
     },
     "dependencies": {
         "@ai-rules/types": "workspace:*"
+    },
+    "devDependencies": {
+        "memfs": "4.17.0"
     }
 }

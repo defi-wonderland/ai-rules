@@ -21,6 +21,8 @@
         "module": "NodeNext",
         "sourceMap": true,
         /* Code doesn't run in the DOM: */
-        "lib": ["es2022"]
+        "lib": ["es2022"],
+        /* Specify Type Definitions */
+        "types": ["node", "vitest/globals"]
     }
 }

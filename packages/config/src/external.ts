@@ -1,20 +1,9 @@
 /**
  * @ai-rules/config
- * Public exports for the config package.
+ * External exports
  */
 
-// TODO: Export configuration service
-// TODO: Export provider interfaces
-// TODO: Export utility functions
-
-// Services
-// TODO: Add ConfigurationService
-// TODO: Add ValidationService
-// TODO: Add MigrationService
-
-// Providers
-// TODO: Add FileSystemProvider
-// TODO: Add GitHubProvider
-
-// Utilities
-// TODO: Add configuration utilities
+export { baseConfig } from "./templates/defaults/base.js";
+export { reactRules } from "./templates/cursor/react.js";
+export { solidityRules } from "./templates/cursor/solidity.js";
+export { typescriptRules } from "./templates/cursor/typescript.js";

@@ -2,7 +2,7 @@
     "name": "@ai-rules/prompts",
     "version": "0.0.1",
     "private": true,
-    "description": "Interactive prompts for AI Rules CLI",
+    "description": "Interactive prompts for the AI Rules script (optional)",
     "license": "MIT",
     "author": "Wonderland",
     "type": "module",

@@ -54,3 +54,6 @@ contracts/cache
 
 # Coverage
 lcov.info
+
+# bin
+bin

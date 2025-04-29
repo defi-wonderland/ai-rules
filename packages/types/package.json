@@ -2,7 +2,7 @@
     "name": "@ai-rules/types",
     "version": "0.0.1",
     "private": true,
-    "description": "Type definitions for AI Rules CLI",
+    "description": "Type definitions for the AI Rules script",
     "license": "MIT",
     "author": "Wonderland",
     "type": "module",
