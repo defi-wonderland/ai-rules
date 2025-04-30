@@ -1,58 +1,62 @@
 # @ai-rules/generators
 
-Configuration file generators for the AI Rules CLI tool.
+Configuration file generators for the AI Rules script.
 
 ## Overview
 
-This package handles the generation of configuration files for both `.coderabbit.yaml` and `.cursor/rules`. It uses templates and user inputs to create properly formatted configuration files with team-specific best practices.
+This package handles the generation of configuration files for both `.coderabbit.yaml` and `.cursor/rules`. It uses templates and programmatic logic to create properly formatted configuration files with team-specific best practices.
 
-## Structure
+## Directory Structure
 
 ```
-src/
-├── templates/      # Template files
-│   ├── coderabbit/ # CodeRabbit templates
-│   └── cursor/     # Cursor templates
-├── providers/      # Template providers
-├── services/       # Generator services
-├── external.ts     # Public exports
-└── index.ts       # Entry point
+generators/
+├── src/
+│   ├── generators/   # Main generator classes (e.g., TemplateGenerator)
+│   ├── builders/     # Builder utilities (e.g., ConfigBuilder)
+│   ├── external.ts   # Public exports
+│   └── index.ts      # Entry point
+├── test/
+│   ├── generators/   # Tests for generator classes
+│   ├── builders/     # Tests for builder utilities
+│   └── index.spec.ts # General tests
+├── package.json
+└── README.md
 ```
 
 ## Key Components
 
-### Template System
-
--   Handlebars-based templating
--   Version-specific templates
--   Team-specific templates
--   Template inheritance
-
-### Generator Services
-
--   `GeneratorService` - Main service for file generation
--   `TemplateService` - Handles template loading and processing
--   `ValidationService` - Validates generated configurations
+-   **TemplateGenerator**: Main class for generating configuration files from templates.
+-   **Templates**: Team- and tool-specific templates for CodeRabbit and Cursor rules.
 
 ## Usage
 
 ```typescript
-import { GeneratorService } from "@ai-rules/generators";
+import { TemplateGenerator } from "@ai-rules/generators";
+import { Config } from "@ai-rules/types";
 
-const generator = await GeneratorService.create();
-
-// Generate configurations
-await generator.generate({
-    teams: ["typescript", "solidity"],
-    outputDir: "./config",
-    // other options
-});
+const config: Config = {
+    /* ... */
+};
+const outputPath = "/path/to/output";
+const generator = new TemplateGenerator(config, outputPath);
+await generator.generateAll();
 ```
 
-## TODO
+## Features
 
--   [ ] Create base template system
--   [ ] Implement CodeRabbit templates
--   [ ] Implement Cursor rule templates
--   [ ] Add template inheritance
--   [ ] Create generator service
+-   Generates `.coderabbit.yaml` and `.cursor/rules/*` files
+-   Supports multiple tech stacks and team types
+-   Uses semantic versioning for configuration
+-   Typesafe and extensible architecture
+-   File system-based operations with robust error handling
+
+## Development
+
+-   Node.js v20
+-   pnpm v9.7.1
+
+See the root README for scripts, contribution guidelines, and more.
+
+## License
+
+MIT

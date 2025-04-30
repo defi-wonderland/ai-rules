@@ -1,6 +1,6 @@
 /**
  * @ai-rules/types
- * Core type definitions and schemas for the AI Rules CLI tool.
+ * Core type definitions and schemas for the AI Rules script.
  */
 
 export * from "./schemas/index.js";

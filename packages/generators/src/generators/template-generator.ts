@@ -1,7 +1,8 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import type { Config } from "@ai-rules/types";
-import { baseConfig, reactRules, solidityRules, typescriptRules } from "@ai-rules/config";
+import { reactRules, solidityRules, typescriptRules } from "@ai-rules/config";
+import { CodeRabbitConfig, DefaultCodeRabbitConfig } from "@ai-rules/types";
 import * as yaml from "yaml";
 
 /**
@@ -66,6 +67,9 @@ export class TemplateGenerator {
 
     /**
      * Compare two semantic versions
+     *
+     * Note: This function expects versions in the format 'x.y.z'.
+     *
      * @param version1 First version
      * @param version2 Second version
      * @returns number Positive if version1 > version2, negative if version1 < version2, 0 if equal
@@ -96,12 +100,14 @@ export class TemplateGenerator {
             return;
         }
 
-        const config = {
-            ...(this.config.coderabbit ?? baseConfig.coderabbit),
-            version: currentVersion,
+        const config: CodeRabbitConfig = {
+            ...(this.config.coderabbit ?? DefaultCodeRabbitConfig),
         };
 
-        const yamlContent = yaml.stringify(config);
+        const yamlContent = yaml.stringify({
+            ...config,
+            version: currentVersion,
+        });
         await this.writeFile(filePath, yamlContent);
     }
 
@@ -131,13 +137,10 @@ export class TemplateGenerator {
         ];
 
         for (const set of ruleSets) {
-            if (!set.applies) {
-                continue;
-            }
+            if (!set.applies) continue;
 
-            for (const rule of set.rules) {
+            const writePromises = set.rules.map((rule) => {
                 const filePath = `.cursor/rules/${set.teamFolder}/${rule.name}.mdc`;
-
                 const content = `---
 description: ${rule.description}
 globs: ${Array.isArray(rule.globs) ? rule.globs.join(", ") : rule.globs}
@@ -145,9 +148,10 @@ version: ${currentVersion}
 ---
 
 ${rule.content}`;
+                return this.writeFile(filePath, content);
+            });
 
-                await this.writeFile(filePath, content);
-            }
+            await Promise.all(writePromises);
         }
     }
 

@@ -1,8 +1,8 @@
 {
-    "name": "@wonderland/ai-rules",
+    "name": "@defi-wonderland/ai-rules",
     "version": "0.0.1",
     "private": true,
-    "description": "CLI tool for standardizing AI configuration across teams",
+    "description": "npx script for standardizing AI tool configurations across teams",
     "homepage": "https://github.com/defi-wonderland/ai-rules",
     "repository": {
         "type": "git",
@@ -36,7 +36,7 @@
     "devDependencies": {
         "@commitlint/config-conventional": "19.4.1",
         "@ianvs/prettier-plugin-sort-imports": "4.3.1",
-        "@types/node": "20.3.1",
+        "@types/node": "20",
         "@typescript-eslint/eslint-plugin": "7.18.0",
         "@typescript-eslint/parser": "7.18.0",
         "@vitest/coverage-v8": "2.0.5",

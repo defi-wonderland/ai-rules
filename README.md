@@ -1,121 +1,75 @@
-# AI Rules CLI
+# AI Rules Script
 
-A command-line tool for standardizing AI configuration across teams. This tool helps manage and maintain consistent `.coderabbit.yaml` and `.cursor/rules` configurations across multiple repositories.
+A script for standardizing AI configuration across teams. This tool helps manage and maintain consistent `.coderabbit.yaml` and `.cursor/rules` configurations across multiple repositories.
 
 ## Overview
 
-Current project setups require manual configuration of `coderabbit.yml` and `.cursor/rules` files across multiple teams. This leads to inconsistencies and missed optimizations. The CLI tool standardizes configuration while respecting team-specific best practices.
+Current project setups require manual configuration of `coderabbit.yml` and `.cursor/rules` files across multiple teams. This leads to inconsistencies and missed optimizations. The script standardizes configuration while respecting team-specific best practices. Feel free to delete and/or change any configuration files, but if you have a suggestion on improving one of the rules open an issue and we'll update the script accordingly!
 
 ## Features
 
--   Multi-team support (Offchain, Solidity, UI, Technical Writing)
+-   Variety of tech stack best practices supported: React, Solidity, TypeScript, etc.
 -   Preset best practice configurations
--   Interactive prompt system with conditional flows
--   Configuration versioning
--   Cross-team best practices support
--   Validation & safety checks
+-   Configuration semantic versioning
+-   Typesafe configurations
 
 ## Architecture
 
 ```
 ┌─────────────────┐
-│  CLI Command    │
-│ (oclif-based)   │
+│  Script Entry   │
 └────────┬────────┘
          │
          ▼
-┌──────────────────────────┐
-│ General Tech Stack Prompt│
-│ (Multi-select: Back End, │
-│  UI, Solidity)           │
-└────────┬────────┬────────┘
-         │        │
-         ▼        ▼
-┌────────────┐  ┌─────────────┐
-│ Offchain   │  │  Solidity   │
-│ Prompt:    │  │ Prompt:     │
-│ Language   │  │ Gas Options │
-│ selection  │  │ (Yes/No)    │
-└────────────┘  └─────────────┘
-         │              │
-         ▼              ▼
-┌──────────────────────────┐
-│  Validate Answers (Zod)  │
-└────────┬────────┬────────┘
-         │
-         ▼
-┌──────────────────────────┐
-│  Generate Config Files   │
-└──────────────────────────┘
+┌──────────────────────────────┐
+│  Generate Configuration Files│
+│  (e.g., .coderabbit.yaml,    │
+│   .cursor/rules/*)           │
+└──────────────────────────────┘
 ```
 
 ## Project Structure
 
 ```
-packages/
-├── types/           # Core type definitions and schemas
-├── config/          # Configuration management
-├── prompts/         # Interactive prompt system
-├── generators/      # Configuration generators
-└── cli/            # Main CLI interface
+ai-rules/
+├── packages/
+│   ├── types/        # Core type definitions and schemas
+│   ├── config/       # Configuration management
+│   ├── generators/   # Configuration generators
+│   └── core/         # Main script entry point
 ```
 
-## Installation
+## Installation & Usage
+
+You can run the script directly with npx (no install required):
 
 ```bash
-# Using npm
-npm install -g @ai-rules/cli
-
-# Using yarn
-yarn global add @ai-rules/cli
-
-# Using pnpm
-pnpm add -g @ai-rules/cli
+npx @defi-wonderland/ai-rules
 ```
 
-## Usage
+Or, after installing globally:
 
 ```bash
-# Initialize new configuration
-ai-rules init
+pnpm add -g @defi-wonderland/ai-rules
+ai-rules
+```
 
-# Generate configuration files
-ai-rules generate
+Or, for development:
 
-# Validate existing configuration
-ai-rules validate
-
-# Upgrade configuration version
-ai-rules upgrade
+```bash
+git clone https://github.com/defi-wonderland/ai-rules.git
+cd ai-rules
+pnpm install
+pnpm build
+node packages/core/bin/ai-rules.js
 ```
 
 ## Development
 
 ### Prerequisites
 
--   Node.js v.20
+-   Node.js v20
 -   pnpm v.9.7.1
-
-### Setup
-
-1. Clone the repository
-
-```bash
-git clone https://github.com/defi-wonderland/ai-rules.git
-cd ai-rules
-```
-
-2. Install dependencies
-
-```bash
-pnpm install
-```
-
-3. Build all packages
-
-```bash
-pnpm build
-```
 
 ### Available Scripts
 
@@ -123,7 +77,6 @@ pnpm build
 | ---------- | ----------------------- |
 | `build`    | Build all packages      |
 | `clean`    | Clean build artifacts   |
-| `dev`      | Start development mode  |
 | `test`     | Run tests               |
 | `test:cov` | Run tests with coverage |
 | `lint`     | Run linter              |
@@ -133,9 +86,8 @@ pnpm build
 
 -   `@ai-rules/types`: Core type definitions and schemas
 -   `@ai-rules/config`: Configuration management
--   `@ai-rules/prompts`: Interactive prompt system
 -   `@ai-rules/generators`: Configuration generators
--   `@ai-rules/cli`: Main CLI interface
+-   `@defi-wonderland/ai-rules`: Main script entry point
 
 ## Contributing
 
@@ -166,189 +118,3 @@ Replace `<package-name>` with your desired package name. This command will gener
 ## License
 
 The primary license for the boilerplate is MIT. See the [`LICENSE`](./LICENSE) file for details.
-
-```
-ai-rules
-├─ .commitlintrc.json
-├─ .eslintrc.cjs
-├─ .git
-├─ .github
-│  ├─ actions
-│  │  └─ setup
-│  │     └─ action.yml
-│  ├─ pull_request_template.md
-│  └─ workflows
-│     ├─ lint.yml
-│     ├─ main-workflow.yml
-│     └─ test.yml
-├─ .gitignore
-├─ .husky
-│  ├─ _
-│  │  ├─ .gitignore
-│  │  ├─ applypatch-msg
-│  │  ├─ commit-msg
-│  │  ├─ h
-│  │  ├─ husky.sh
-│  │  ├─ post-applypatch
-│  │  ├─ post-checkout
-│  │  ├─ post-commit
-│  │  ├─ post-merge
-│  │  ├─ post-rewrite
-│  │  ├─ pre-applypatch
-│  │  ├─ pre-auto-gc
-│  │  ├─ pre-commit
-│  │  ├─ pre-merge-commit
-│  │  ├─ pre-push
-│  │  ├─ pre-rebase
-│  │  └─ prepare-commit-msg
-│  ├─ commit-msg
-│  └─ pre-commit
-├─ .npmrc
-├─ .nvmrc
-├─ .prettierrc
-├─ LICENSE
-├─ README.md
-├─ create-package.sh
-├─ implementation-steps.txt
-├─ package.json
-├─ packages
-│  ├─ cli
-│  │  ├─ LICENSE
-│  │  ├─ README.md
-│  │  ├─ package.json
-│  │  ├─ src
-│  │  │  ├─ commands
-│  │  │  │  └─ generate.ts
-│  │  │  ├─ external.ts
-│  │  │  ├─ index.ts
-│  │  │  └─ services
-│  │  │     └─ .gitkeep
-│  │  ├─ test
-│  │  │  └─ index.spec.ts
-│  │  ├─ tsconfig.json
-│  │  └─ vitest.config.ts
-│  ├─ config
-│  │  ├─ LICENSE
-│  │  ├─ README.md
-│  │  ├─ package.json
-│  │  ├─ src
-│  │  │  ├─ external.ts
-│  │  │  ├─ index.ts
-│  │  │  ├─ interfaces
-│  │  │  │  ├─ config-provider.interface.ts
-│  │  │  │  └─ index.ts
-│  │  │  ├─ providers
-│  │  │  │  ├─ filesystem-provider.ts
-│  │  │  │  └─ index.ts
-│  │  │  ├─ services
-│  │  │  │  ├─ configuration.service.ts
-│  │  │  │  └─ index.ts
-│  │  │  ├─ templates
-│  │  │  │  ├─ cursor
-│  │  │  │  │  ├─ index.ts
-│  │  │  │  │  ├─ react.ts
-│  │  │  │  │  ├─ solidity.ts
-│  │  │  │  │  └─ typescript.ts
-│  │  │  │  └─ defaults
-│  │  │  │     ├─ base.ts
-│  │  │  │     ├─ index.ts
-│  │  │  │     ├─ offchain.ts
-│  │  │  │     └─ solidity.ts
-│  │  │  └─ test
-│  │  │     ├─ providers
-│  │  │     │  └─ filesystem-provider.test.ts
-│  │  │     ├─ services
-│  │  │     │  └─ configuration.service.test.ts
-│  │  │     └─ templates
-│  │  │        └─ defaults
-│  │  │           ├─ base.test.ts
-│  │  │           ├─ offchain.test.ts
-│  │  │           └─ solidity.test.ts
-│  │  ├─ test
-│  │  │  └─ index.spec.ts
-│  │  ├─ tsconfig.json
-│  │  └─ vitest.config.ts
-│  ├─ generators
-│  │  ├─ LICENSE
-│  │  ├─ README.md
-│  │  ├─ package.json
-│  │  ├─ src
-│  │  │  ├─ external.ts
-│  │  │  ├─ generators
-│  │  │  │  ├─ index.ts
-│  │  │  │  └─ template-generator.ts
-│  │  │  ├─ index.ts
-│  │  │  ├─ providers
-│  │  │  │  └─ .gitkeep
-│  │  │  └─ services
-│  │  │     └─ .gitkeep
-│  │  ├─ test
-│  │  │  └─ index.spec.ts
-│  │  ├─ tsconfig.json
-│  │  └─ vitest.config.ts
-│  ├─ prompts
-│  │  ├─ LICENSE
-│  │  ├─ README.md
-│  │  ├─ package.json
-│  │  ├─ src
-│  │  │  ├─ external.ts
-│  │  │  ├─ index.ts
-│  │  │  ├─ interfaces
-│  │  │  │  ├─ index.ts
-│  │  │  │  └─ prompt-provider.interface.ts
-│  │  │  ├─ providers
-│  │  │  │  ├─ index.ts
-│  │  │  │  └─ inquirer-provider.ts
-│  │  │  ├─ questions
-│  │  │  │  └─ .gitkeep
-│  │  │  ├─ services
-│  │  │  │  ├─ index.ts
-│  │  │  │  └─ validation.service.ts
-│  │  │  └─ validators
-│  │  │     └─ .gitkeep
-│  │  ├─ test
-│  │  │  └─ index.spec.ts
-│  │  ├─ tsconfig.json
-│  │  └─ vitest.config.ts
-│  └─ types
-│     ├─ LICENSE
-│     ├─ README.md
-│     ├─ package.json
-│     ├─ src
-│     │  ├─ errors
-│     │  │  ├─ base-configuration.ts
-│     │  │  ├─ file-generation.ts
-│     │  │  ├─ file-operation.ts
-│     │  │  ├─ index.ts
-│     │  │  ├─ invalid-json.ts
-│     │  │  ├─ missing-config.ts
-│     │  │  ├─ missing-team.ts
-│     │  │  └─ validation.ts
-│     │  ├─ external.ts
-│     │  ├─ index.ts
-│     │  ├─ interfaces
-│     │  │  ├─ cursor-rule.interface.ts
-│     │  │  └─ index.ts
-│     │  └─ schemas
-│     │     ├─ config.mocks.ts
-│     │     ├─ config.ts
-│     │     └─ index.ts
-│     ├─ test
-│     │  ├─ errors
-│     │  │  ├─ base-configuration.spec.ts
-│     │  │  ├─ file-generation.spec.ts
-│     │  │  ├─ file-operation.spec.ts
-│     │  │  ├─ invalid-json.spec.ts
-│     │  │  ├─ missing-config.spec.ts
-│     │  │  ├─ missing-team.spec.ts
-│     │  │  └─ validation.spec.ts
-│     │  └─ index.spec.ts
-│     ├─ tsconfig.json
-│     └─ vitest.config.ts
-├─ pnpm-lock.yaml
-├─ pnpm-workspace.yaml
-├─ tsconfig.base.json
-├─ tsconfig.json
-└─ turbo.json
-
-```

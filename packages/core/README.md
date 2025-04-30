@@ -1,170 +1,62 @@
-# @ai-rules/core
+# @ai-rules/core (Core Script)
 
-TODO: update this README since no longer using CLI
-
-Command-line interface for generating and managing AI configuration files.
+Script entry point for generating and managing AI configuration files for the AI Rules project.
 
 ## Overview
 
-This package provides the main CLI interface for the AI Rules tool. It uses oclif to create a command-line experience for managing AI configuration files across teams.
+This package provides the main script entry for generating standardized configuration files (such as `.coderabbit.yaml` and `.cursor/rules/*`) across teams and repositories. It is a script that can be run directly or via npx.
 
-## Structure
+## Directory Structure
 
 ```
-src/
-├── commands/      # CLI commands
-├── services/      # CLI services
-└── index.ts      # Entry point
+core/
+├── src/
+│   └── index.ts      # Script entry point
+├── bin/
+│   └── ai-rules.js   # Executable script for npx/global usage
+├── test/
+│   └── index.spec.ts # Tests for the script
+├── package.json
+└── README.md
 ```
 
-## Key Components
+## Usage
 
-### Commands
+You can run the script directly with npx (no install required):
 
--   `init` - Initialize configuration
--   `generate` - Generate configuration files
--   `validate` - Validate existing configurations
--   `upgrade` - Upgrade configuration versions
-
-### Services
-
--   `CLIService` - Main service for CLI operations
--   `LoggingService` - Handles CLI output and logging
--   `StateService` - Manages CLI state
-
-## Installation
-
-````bash
-# Using npm
-npm install -g @ai-rules/cli
-
-# Using yarn
-yarn global add @ai-rules/cli
-
-Generate configuration files:
 ```bash
-ai-rules generate
-````
+npx @defi-wonderland/ai-rules
+```
 
-Options:
+Or, after installing globally:
 
--   `-f, --force`: Force overwrite existing files
--   `-p, --path`: Output path for generated files (default: current directory)
+```bash
+pnpm add -g @defi-wonderland/ai-rules
+ai-rules
+```
+
+Or, for development:
+
+```bash
+git clone https://github.com/defi-wonderland/ai-rules.git
+cd ai-rules
+pnpm install
+pnpm build
+node packages/core/bin/ai-rules.js
+```
 
 ## Development
 
-1. Clone the repository
-2. Install dependencies:
+### Prerequisites
 
-```bash
-pnpm install
-```
+-   Node.js v20
+-   pnpm v9.7.1
 
-3. Build the project:
-
-```bash
-pnpm run build
-```
-
-4. Link the CLI for local testing:
-
-```bash
-pnpm link
-```
-
-## Testing
-
-### Unit Tests
-
-Run the test suite:
-
-```bash
-pnpm test
-```
-
-Run with coverage:
-
-```bash
-pnpm test:cov
-```
-
-### Manual Testing
-
-1. Build and link the CLI:
-
-```bash
-pnpm run build
-pnpm link
-```
-
-2. Create a test directory:
-
-```bash
-mkdir test-cli
-cd test-cli
-```
-
-3. Test the generate command:
-
-```bash
-ai-rules generate
-```
-
-4. Test with different flags:
-
-```bash
-# Force overwrite
-ai-rules generate -f
-
-# Custom output path
-ai-rules generate -p ./configs
-```
-
-5. Verify generated files:
-
-```bash
-ls -la .cursor/rules/
-cat .coderabbit.yaml
-```
-
-### Integration Testing
-
-Test the CLI with different project setups:
-
-1. Empty project:
-
-```bash
-mkdir empty-test
-cd empty-test
-ai-rules generate
-```
-
-2. Existing project:
-
-```bash
-# Create a sample project
-mkdir existing-test
-cd existing-test
-echo '{}' > package.json
-ai-rules generate
-```
-
-3. With existing configurations:
-
-```bash
-# Create existing configs
-mkdir existing-configs
-cd existing-configs
-mkdir -p .cursor/rules
-touch .cursor/rules/typescript-base.mdc
-ai-rules generate -f  # Test overwrite
-```
-
-## Available Scripts
+### Available Scripts
 
 | Script        | Description                                             |
 | ------------- | ------------------------------------------------------- |
-| `build`       | Build CLI using tsc                                     |
+| `build`       | Build the script using tsc                              |
 | `check-types` | Check types issues using tsc                            |
 | `clean`       | Remove `dist` folder                                    |
 | `lint`        | Run ESLint to check for coding standards                |
@@ -174,15 +66,18 @@ ai-rules generate -f  # Test overwrite
 | `test`        | Run tests using vitest                                  |
 | `test:cov`    | Run tests with coverage report                          |
 
-## TODO
+## Features
 
--   [ ] Implement base CLI structure
--   [ ] Create init command
--   [ ] Add generate command
--   [ ] Implement validate command
--   [ ] Add upgrade command
--   [ ] Create logging service
--   [ ] Add state management
--   [ ] Implement error handling
--   [ ] Add command documentation
--   [ ] Create help system
+-   Generates `.coderabbit.yaml` and `.cursor/rules/*` files for standardizing AI configuration
+-   Supports multiple tech stacks and team types
+-   Semantic versioning for configuration
+-   Typesafe and extensible architecture
+-   File system-based operations with robust error handling
+
+## Contributing
+
+See the root README for contribution guidelines, conventional commits, and package creation instructions.
+
+## License
+
+MIT

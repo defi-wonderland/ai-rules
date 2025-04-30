@@ -17,22 +17,32 @@ import inquirer from "inquirer";
 async function run(): Promise<void> {
     console.log("Starting AI Rules installation...");
 
+    // 1. Ask for confirmation if files might be overwritten
+    const outputPath = process.cwd();
+    const coderabbitPath = path.join(outputPath, ".coderabbit.yaml");
+    const cursorPath = path.join(outputPath, ".cursor");
+
+    let shouldPrompt = false;
     try {
-        // 1. Ask for confirmation if files might be overwritten
-        const outputPath = process.cwd();
-        const coderabbitPath = path.join(outputPath, ".coderabbit.yaml");
-        const cursorPath = path.join(outputPath, ".cursor");
+        await fs.access(coderabbitPath);
+        shouldPrompt = true;
+    } catch (err: unknown) {
+        if (!isNodeErrorWithCode(err) || err.code !== "ENOENT") {
+            // Log and proceed, don't exit
+            console.error(`File check failed for: ${coderabbitPath}`);
+        }
+    }
+    try {
+        await fs.access(cursorPath);
+        shouldPrompt = true;
+    } catch (err: unknown) {
+        if (!isNodeErrorWithCode(err) || err.code !== "ENOENT") {
+            // Log and proceed, don't exit
+            console.error(`File check failed for: ${cursorPath}`);
+        }
+    }
 
-        let shouldPrompt = false;
-        try {
-            await fs.access(coderabbitPath);
-            shouldPrompt = true;
-        } catch {}
-        try {
-            await fs.access(cursorPath);
-            shouldPrompt = true;
-        } catch {}
-
+    try {
         if (shouldPrompt) {
             const confirm = await confirmOverwrite();
             if (!confirm) {
@@ -45,12 +55,8 @@ async function run(): Promise<void> {
         const config: Config = {
             version: baseConfig.version,
             teams: [TeamType.enum.offchain, TeamType.enum.solidity, TeamType.enum.ui],
-            // Team-specific configs are top-level optional properties
-            // We provide defaults here based on the schemas to satisfy the type,
-            // even if the generator might override/ignore parts.
             typescript: OffchainLanguageConfigSchema.parse({ language: "typescript" }),
             solidity: SolidityConfigSchema.parse({}), // Default for solidity
-            // ui: {} // No specific schema for UI currently defined in ConfigSchema
             coderabbit: baseConfig.coderabbit, // Use the default coderabbit config from baseConfig
         };
         console.log("Using default configuration:", JSON.stringify(config, null, 2));
@@ -72,6 +78,18 @@ async function run(): Promise<void> {
         }
         process.exit(1);
     }
+}
+
+/**
+ * Type guard to check if an error is a NodeJS error with a code property
+ */
+function isNodeErrorWithCode(err: unknown): err is { code: string } {
+    return (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        typeof (err as { code: unknown }).code === "string"
+    );
 }
 
 /**

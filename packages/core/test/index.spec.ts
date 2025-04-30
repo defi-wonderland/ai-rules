@@ -29,9 +29,9 @@ describe("Core Script (run function)", () => {
 
     let spyProcessExit: MockInstance<(code?: number | undefined) => never>;
     let spyProcessCwd: MockInstance<() => string>;
-    let spyConsoleLog: MockInstance<(message?: any, ...optionalParams: any[]) => void>;
-    let spyConsoleError: MockInstance<(message?: any, ...optionalParams: any[]) => void>;
-    let spyConsoleWarn: MockInstance<(message?: any, ...optionalParams: any[]) => void>;
+    let spyConsoleLog: MockInstance<(message?: unknown, ...optionalParams: unknown[]) => void>;
+    let spyConsoleError: MockInstance<(message?: unknown, ...optionalParams: unknown[]) => void>;
+    let spyConsoleWarn: MockInstance<(message?: unknown, ...optionalParams: unknown[]) => void>;
 
     beforeAll(async () => {
         const inquirer = await import("inquirer");

@@ -11,3 +11,6 @@ export * from "./schemas/index.js";
 
 // Testing Utilities
 export { mockConfig, mockMinimalConfig } from "./schemas/config.mocks.js";
+
+// Configuration Types
+export { DefaultCodeRabbitConfig, type CodeRabbitConfig } from "./schemas/index.js";

@@ -291,3 +291,7 @@ export type ValidationResult = {
     success: boolean;
     errors?: z.ZodError;
 };
+
+// Export the CodeRabbitConfig type and default
+export type CodeRabbitConfig = z.infer<typeof ConfigSchema.shape.coderabbit>;
+export const DefaultCodeRabbitConfig: CodeRabbitConfig = ConfigSchema.shape.coderabbit.parse({});
