@@ -12,7 +12,6 @@ This package handles the generation of configuration files for both `.coderabbit
 generators/
 ├── src/
 │   ├── generators/   # Main generator classes (e.g., TemplateGenerator)
-│   ├── builders/     # Builder utilities (e.g., ConfigBuilder)
 │   ├── external.ts   # Public exports
 │   └── index.ts      # Entry point
 ├── test/
