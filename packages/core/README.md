@@ -80,4 +80,4 @@ See the root README for contribution guidelines, conventional commits, and packa
 
 ## License
 
-MIT
+The primary license for the boilerplate is MIT. See the [`LICENSE`](./LICENSE) file for details.

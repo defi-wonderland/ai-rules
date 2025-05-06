@@ -6,14 +6,14 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import inquirer from "inquirer";
 
-import { TemplateGenerator } from "./internal/generators/template-generator.js";
+import { TemplateGenerator } from "./internal/generators/index.js";
 import {
     Config,
     OffchainLanguageConfigSchema,
     SolidityConfigSchema,
     TeamType,
-} from "./internal/schemas/config.js";
-import { baseConfig } from "./internal/templates/defaults/base.js";
+} from "./internal/schemas/index.js";
+import { baseConfig } from "./internal/templates/defaults/index.js";
 
 /**
  * Main function to run the AI rules installation script.
@@ -64,7 +64,6 @@ async function run(): Promise<void> {
             solidity: SolidityConfigSchema.parse({}), // Use Zod default for solidity
             coderabbit: baseConfig.coderabbit, // Use the default coderabbit config from baseConfig
         };
-        // console.log("Using default configuration:", JSON.stringify(config, null, 2)); // Optional: for debugging
 
         // 3. Instantiate the generator directly
         const generator = new TemplateGenerator(config, outputPath);
@@ -79,9 +78,9 @@ async function run(): Promise<void> {
         if (error instanceof Error) {
             console.error(error.message);
         } else {
-            console.error(String(error)); // Ensure error is logged as string
+            console.error(String(error));
         }
-        process.exit(1); // Exit with error code
+        process.exit(1);
     }
 }
 
@@ -128,4 +127,4 @@ if (currentFilePath === entryPointPath) {
     void run();
 }
 
-export { run }; // Export for potential programmatic use or testing
+export { run };

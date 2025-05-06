@@ -3,7 +3,7 @@
  */
 import { vi } from "vitest";
 
-import { Config } from "../../src/internal/schemas/config.js";
+import { Config } from "../../src/internal/schemas/index.js";
 
 /**
  * Creates a standard mock configuration for tests

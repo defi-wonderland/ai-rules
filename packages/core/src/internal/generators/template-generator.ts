@@ -3,9 +3,9 @@ import * as path from "path";
 import * as yaml from "yaml";
 
 import type { Config } from "../schemas/config.js";
-import { CodeRabbitConfig, DefaultCodeRabbitConfig } from "../schemas/config.js";
+import { CodeRabbitConfig, DefaultCodeRabbitConfig } from "../schemas/index.js";
 import { reactRules, solidityRules, typescriptRules } from "../templates/cursor/index.js";
-import { compareVersions } from "../utils/version-utils.js";
+import { compareVersions } from "../utils/index.js";
 
 /**
  * Generator class for creating configuration files from templates

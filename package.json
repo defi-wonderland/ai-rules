@@ -1,8 +1,8 @@
 {
-    "name": "ai-rules-monorepo",
+    "name": "ai-rules",
     "version": "0.0.1",
     "private": true,
-    "description": "AI configuration file generator - Development Monorepo",
+    "description": "AI configuration file generator",
     "homepage": "https://github.com/defi-wonderland/ai-rules",
     "repository": {
         "type": "git",
@@ -55,7 +55,7 @@
         "turbo": "2.1.1",
         "typescript": "5.5.4",
         "vitest": "2.0.5",
-        "zod": "3.24.1"
+        "zod": "3.24.4"
     },
     "packageManager": "pnpm@9.7.1+sha256.46f1bbc8f8020aa9869568c387198f1a813f21fb44c82f400e7d1dbde6c70b40",
     "engines": {

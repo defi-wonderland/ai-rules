@@ -44,8 +44,6 @@ describe("compareVersions Utility", () => {
         expect(compareVersions("1.x.3", "1.0.3")).toBe(0);
         expect(compareVersions("1.2.beta", "1.2.0")).toBe(0);
         expect(compareVersions("alpha.2.3", "0.2.3")).toBe(0);
-        // Note: This simple comparison treats pre-release tags incorrectly according to SemVer spec
-        // e.g., "1.0.0-alpha" should be less than "1.0.0", but here it parses as 1.0.0 vs 1.0.0
         expect(compareVersions("1.0.0-alpha", "1.0.0")).toBe(0);
     });
 });

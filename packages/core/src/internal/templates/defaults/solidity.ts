@@ -1,4 +1,4 @@
-import { SolidityConfigSchema } from "../../../internal/schemas/config.js";
+import { SolidityConfigSchema } from "../../../internal/schemas/index.js";
 
 /**
  * Default configuration for Solidity teams

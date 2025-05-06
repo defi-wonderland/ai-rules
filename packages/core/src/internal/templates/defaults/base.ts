@@ -1,4 +1,4 @@
-import { Config } from "../../schemas/config.js";
+import { Config } from "../../schemas/index.js";
 
 /**
  * Base starter configuration template for all team types

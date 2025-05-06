@@ -4,7 +4,7 @@ A script for standardizing AI configuration across teams. This tool helps manage
 
 ## Overview
 
-This package provides a simple script to generate AI configuration files for your projects. It generates a `.coderabbit.yaml` file and a set of `.cursor/rules` files specific to the teams you're working with.
+This package provides a simple script to generate AI configuration files for your projects. It generates a `.coderabbit.yaml` file and a set of `.cursor/rules` files. Feel free to delete any that do not apply to your project.
 
 ## Installation & Usage
 
@@ -17,7 +17,7 @@ npx @defi-wonderland/ai-rules
 Or, after installing globally:
 
 ```bash
-npm install -g @defi-wonderland/ai-rules
+pnpm add -g @defi-wonderland/ai-rules
 ai-rules
 ```
 
@@ -39,4 +39,4 @@ The script will generate:
 
 ## License
 
-MIT
+The primary license for the boilerplate is MIT. See the [`LICENSE`](./LICENSE) file for details.

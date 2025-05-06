@@ -1,4 +1,4 @@
-import type { CursorRule } from "../../interfaces/cursor-rule.interface.js";
+import type { CursorRule } from "../../interfaces/index.js";
 
 export const typescriptRules: CursorRule[] = [
     {
