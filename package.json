@@ -1,8 +1,8 @@
 {
-    "name": "@defi-wonderland/ai-rules",
+    "name": "ai-rules-monorepo",
     "version": "0.0.1",
     "private": true,
-    "description": "npx script for standardizing AI tool configurations across teams",
+    "description": "AI configuration file generator - Development Monorepo",
     "homepage": "https://github.com/defi-wonderland/ai-rules",
     "repository": {
         "type": "git",
@@ -11,6 +11,9 @@
     "license": "MIT",
     "author": "Wonderland",
     "type": "module",
+    "workspaces": [
+        "packages/core"
+    ],
     "scripts": {
         "build": "turbo run build",
         "check-types": "turbo run check-types",

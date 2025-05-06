@@ -1,15 +1,19 @@
 #!/usr/bin/env node
+// The above shebang directive tells the system to use the node interpreter found in the user's PATH to run the script
+// This allows users to run the script directly rather than explicitly calling node
 import * as fs from "fs/promises";
 import * as path from "path";
-import { baseConfig } from "@ai-rules/config";
-import { TemplateGenerator } from "@ai-rules/generators";
+import { fileURLToPath } from "url";
+import inquirer from "inquirer";
+
+import { TemplateGenerator } from "./internal/generators/template-generator.js";
 import {
     Config,
     OffchainLanguageConfigSchema,
     SolidityConfigSchema,
     TeamType,
-} from "@ai-rules/types";
-import inquirer from "inquirer";
+} from "./internal/schemas/config.js";
+import { baseConfig } from "./internal/templates/defaults/base.js";
 
 /**
  * Main function to run the AI rules installation script.
@@ -52,16 +56,17 @@ async function run(): Promise<void> {
         }
 
         // 2. Define the full/default configuration matching the ConfigSchema
+        // Note: We use baseConfig as the foundation and specify team-specific parts
         const config: Config = {
             version: baseConfig.version,
             teams: [TeamType.enum.offchain, TeamType.enum.solidity, TeamType.enum.ui],
             typescript: OffchainLanguageConfigSchema.parse({ language: "typescript" }),
-            solidity: SolidityConfigSchema.parse({}), // Default for solidity
+            solidity: SolidityConfigSchema.parse({}), // Use Zod default for solidity
             coderabbit: baseConfig.coderabbit, // Use the default coderabbit config from baseConfig
         };
-        console.log("Using default configuration:", JSON.stringify(config, null, 2));
+        // console.log("Using default configuration:", JSON.stringify(config, null, 2)); // Optional: for debugging
 
-        // 3. Instantiate the generator
+        // 3. Instantiate the generator directly
         const generator = new TemplateGenerator(config, outputPath);
         console.log(`Generating files in: ${outputPath}`);
 
@@ -74,9 +79,9 @@ async function run(): Promise<void> {
         if (error instanceof Error) {
             console.error(error.message);
         } else {
-            console.error(error);
+            console.error(String(error)); // Ensure error is logged as string
         }
-        process.exit(1);
+        process.exit(1); // Exit with error code
     }
 }
 
@@ -98,22 +103,29 @@ function isNodeErrorWithCode(err: unknown): err is { code: string } {
  */
 async function confirmOverwrite(): Promise<boolean> {
     try {
-        // Use inquirer directly for a confirmation prompt
         const response = await inquirer.prompt<{ confirm: boolean }>([
             {
                 type: "confirm",
                 name: "confirm",
                 message:
-                    "Existing AI Rules config files (.coderabbit.yaml or .cursor/) found. Overwrite?",
-                default: false, // Default to not overwriting
+                    "Existing AI Rules config files (.coderabbit.yaml or .cursor/) found. Overwrite managed files with newer versions?",
+                default: false,
             },
         ]);
         return response.confirm;
     } catch (err) {
         console.warn("Could not load or run inquirer, proceeding without confirmation.");
         if (err instanceof Error) console.warn(err.message);
-        return true; // Default to true if prompting fails
+        return true; // Default to true (proceed) if prompting fails
     }
 }
 
-export { run };
+// Execute the run function if the script is executed directly
+const currentFilePath = fileURLToPath(import.meta.url);
+const entryPointPath = process.argv[1];
+
+if (currentFilePath === entryPointPath) {
+    void run();
+}
+
+export { run }; // Export for potential programmatic use or testing

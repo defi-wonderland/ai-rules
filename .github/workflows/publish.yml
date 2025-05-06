@@ -1,0 +1,35 @@
+name: Publish Package
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    publish-npm:
+        name: Publish to NPM
+        runs-on: ubuntu-latest
+        env:
+            NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        permissions:
+            contents: read
+            id-token: write
+
+        steps:
+            - name: Check out github repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Setup environment
+              uses: ./.github/actions/setup
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build package
+              run: pnpm --filter @defi-wonderland/ai-rules build
+
+            - name: Publish to NPM
+              working-directory: ./packages/core
+              run: pnpm publish --access public

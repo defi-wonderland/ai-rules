@@ -7,8 +7,9 @@
         "composite": true,
         "declarationMap": true,
         "declaration": true,
-        "outDir": "dist"
+        "outDir": "dist",
+        "moduleResolution": "NodeNext"
     },
     "include": ["src/**/*"],
-    "exclude": ["node_modules", "test"]
+    "exclude": ["node_modules", "test", "dist", "**/*.test.ts"]
 }

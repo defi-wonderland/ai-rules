@@ -1,6 +1,6 @@
 # @ai-rules/core (Core Script)
 
-Script entry point for generating and managing AI configuration files for the AI Rules project.
+Script entry point for generating and managing AI configuration files (Cursor rules and coderabbit.yaml)
 
 ## Overview
 
