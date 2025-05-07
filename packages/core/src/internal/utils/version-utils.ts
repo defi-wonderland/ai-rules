@@ -12,7 +12,7 @@ export type VersionType = `${number}.${number}.${number}`;
  * @param v2 - The second version string. Handles undefined or malformed strings by treating them as "0.0.0" or parsing parts as 0.
  * @returns A positive number if v1 > v2, a negative number if v1 < v2, or 0 if v1 === v2.
  */
-export function compareVersions(v1: string | undefined, v2: string | undefined): number {
+export function compareVersions(v1: VersionType | undefined, v2: VersionType | undefined): number {
     const version1 = (v1 || "0.0.0").split(".").map((part) => parseInt(part) || 0);
     const version2 = (v2 || "0.0.0").split(".").map((part) => parseInt(part) || 0);
 

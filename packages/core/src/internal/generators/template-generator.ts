@@ -3,6 +3,7 @@ import * as path from "path";
 import * as yaml from "yaml";
 
 import type { Config } from "../schemas/config.js";
+import type { VersionType } from "../utils/index.js";
 import { CodeRabbitConfig, DefaultCodeRabbitConfig } from "../schemas/index.js";
 import { reactRules, solidityRules, typescriptRules } from "../templates/cursor/index.js";
 import { compareVersions } from "../utils/index.js";
@@ -87,7 +88,12 @@ export class TemplateGenerator {
                 const content = await fs.readFile(fullPath, "utf8");
                 const parsedConfig = yaml.parse(content) as { version?: string };
                 const fileVersion = parsedConfig.version;
-                return compareVersions(this.config.version, fileVersion) > 0;
+                return (
+                    compareVersions(
+                        this.config.version as VersionType,
+                        fileVersion as VersionType | undefined,
+                    ) > 0
+                );
             }
 
             // For .mdc files, only overwrite ones that we manage AND have an older version
@@ -104,7 +110,12 @@ export class TemplateGenerator {
                     const versionMatch = /version:\s*([0-9.]+)/i.exec(content);
                     if (versionMatch && versionMatch[1]) {
                         const fileVersion = versionMatch[1];
-                        return compareVersions(this.config.version, fileVersion) > 0;
+                        return (
+                            compareVersions(
+                                this.config.version as VersionType,
+                                fileVersion as VersionType,
+                            ) > 0
+                        );
                     }
                 } catch (err) {
                     // If we can't read or parse the file, better safe than sorry - don't overwrite
