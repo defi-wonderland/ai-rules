@@ -6,13 +6,13 @@ on:
             - main
 
 jobs:
-    release: # Renamed job for clarity
+    release:
         name: Release and Publish to NPM
         runs-on: ubuntu-latest
         permissions:
             contents: write # Needed to commit version changes
             pull-requests: write # Needed to create a PR if using that strategy
-            id-token: write # For NPM provenance if configured
+            id-token: write # For NPM provenance
 
         steps:
             - name: Check out github repository
@@ -37,8 +37,6 @@ jobs:
                   publish: pnpm run publish-packages # Command to publish packages
                   commit: "chore: update versions" # Commit message for version bumps
                   title: "chore: update versions" # Title for the PR if a version PR is created
-                  # Optional: If you want to build before versioning/publishing via the action
-                  # build: pnpm --filter @defi-wonderland/ai-rules... build
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
