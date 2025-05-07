@@ -37,6 +37,12 @@ The script will generate:
 -   Configuration uses semantic versioning to track changes
 -   Typesafe configuration generation
 
+## Contributing
+
+Wonderland is a team of top Web3 researchers, developers, and operators who believe that the future needs to be open-source, permissionless, and decentralized.
+
+[DeFi sucks](https://defi.sucks), but Wonderland is here to make it better.
+
 ## License
 
 The primary license for the boilerplate is MIT. See the [`LICENSE`](./LICENSE) file for details.

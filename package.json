@@ -26,6 +26,7 @@
         "lint": "turbo run lint",
         "lint:fix": "turbo run lint:fix",
         "prepare": "husky && chmod +x ./create-package.sh",
+        "publish-packages": "turbo run build lint test && changeset publish",
         "start": "turbo run start",
         "test": "turbo run test",
         "test:cov": "turbo run test:cov",
@@ -37,6 +38,7 @@
         "package.json": "sort-package-json"
     },
     "devDependencies": {
+        "@changesets/cli": "2.29.3",
         "@commitlint/config-conventional": "19.4.1",
         "@ianvs/prettier-plugin-sort-imports": "4.3.1",
         "@types/node": "20",

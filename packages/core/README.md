@@ -1,4 +1,4 @@
-# @ai-rules/core (Core Script)
+# @defi-wonderland/ai-rules (Core Script)
 
 Script entry point for generating and managing AI configuration files (Cursor rules and coderabbit.yaml)
 
@@ -84,10 +84,28 @@ When you run the script:
 
 2.  **Preservation of Custom Files**: The script is designed to be non-destructive towards user-created customizations. If you create your own rule files within the `.cursor/rules/` directory (or its subdirectories like `Offchain`, `Solidity`, `UI`), these custom files will **not** be overwritten or deleted by the script. The script only manages and potentially overwrites files that are part of its standard generation process, identified by their expected names and paths. This allows you to extend the base rule set with your own specific guidelines without fear of them being removed when you update the standard configurations.
 
+## Contributing with Changesets
+
+This project uses [Changesets](https://github.com/changesets/changesets) to manage versioning and changelogs. If you are making a change that should result in a new version of the `@defi-wonderland/ai-rules` package (e.g., bug fixes, new features, breaking changes), you need to add a changeset.
+
+To add a changeset, run the following command in the root of the monorepo:
+
+```bash
+pnpm changeset add
+```
+
+This will prompt you to:
+
+1.  Select the package(s) that your changes affect (in this case, primarily `@defi-wonderland/ai-rules`).
+2.  Choose the appropriate version bump (patch, minor, or major) for each selected package based on [Semantic Versioning](https://semver.org/).
+3.  Write a concise summary of your changes. This summary will be used to generate the changelog.
+
+Commit the generated markdown file (located in the `.changeset` directory) along with your code changes. This file tells the automated release process what to do when your changes are merged into the `main` branch. Currently we are publishing on merges to main.
+
 ## Contributing
 
 See the root README for contribution guidelines, conventional commits, and package creation instructions.
 
 ## License
 
-The primary license for the boilerplate is MIT. See the [`LICENSE`](./LICENSE) file for details.
+The license for this codebase is MIT. See the [`LICENSE`](./LICENSE) file for details.

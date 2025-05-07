@@ -1,8 +1,15 @@
 /**
+ * Represents a semantic version string in the format "major.minor.patch".
+ */
+export type VersionType = `${number}.${number}.${number}`;
+
+/**
  * Compares two semantic version strings.
+ * While the function is robust in parsing various formats (see tests),
+ * the preferred format is {@link VersionType} (e.g., "1.0.0").
  *
- * @param v1 - The first version string.
- * @param v2 - The second version string.
+ * @param v1 - The first version string. Handles undefined or malformed strings by treating them as "0.0.0" or parsing parts as 0.
+ * @param v2 - The second version string. Handles undefined or malformed strings by treating them as "0.0.0" or parsing parts as 0.
  * @returns A positive number if v1 > v2, a negative number if v1 < v2, or 0 if v1 === v2.
  */
 export function compareVersions(v1: string | undefined, v2: string | undefined): number {

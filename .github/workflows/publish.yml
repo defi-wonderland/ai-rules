@@ -6,20 +6,21 @@ on:
             - main
 
 jobs:
-    publish-npm:
-        name: Publish to NPM
+    release: # Renamed job for clarity
+        name: Release and Publish to NPM
         runs-on: ubuntu-latest
-        env:
-            NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         permissions:
-            contents: read
-            id-token: write
+            contents: write # Needed to commit version changes
+            pull-requests: write # Needed to create a PR if using that strategy
+            id-token: write # For NPM provenance if configured
 
         steps:
             - name: Check out github repository
               uses: actions/checkout@v4
               with:
-                  fetch-depth: 0
+                  fetch-depth: 0 # Necessary for Changesets to determine changed packages
+                  # We need to persist credentials so that GITHUB_TOKEN can be used by the changesets action
+                  persist-credentials: false
 
             - name: Setup environment
               uses: ./.github/actions/setup
@@ -27,9 +28,17 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
-            - name: Build package
-              run: pnpm --filter @defi-wonderland/ai-rules build
-
-            - name: Publish to NPM
-              working-directory: ./packages/core
-              run: pnpm publish --access public
+            # The Changesets action handles build, versioning, and publishing
+            - name: Create Release Pull Request or Publish to NPM
+              id: changesets
+              uses: changesets/action@v1
+              with:
+                  # This will run `pnpm changeset version` (if necessary) and `pnpm changeset publish`
+                  publish: pnpm run publish-packages # Command to publish packages
+                  commit: "chore: update versions" # Commit message for version bumps
+                  title: "chore: update versions" # Title for the PR if a version PR is created
+                  # Optional: If you want to build before versioning/publishing via the action
+                  # build: pnpm --filter @defi-wonderland/ai-rules... build
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
