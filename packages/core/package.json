@@ -1,7 +1,7 @@
 {
-    "name": "@ai-rules/core",
+    "name": "@defi-wonderland/ai-rules",
     "version": "0.0.1",
-    "private": true,
+    "private": false,
     "description": "Script to install standard AI configuration files",
     "license": "MIT",
     "author": "Wonderland",
@@ -13,6 +13,7 @@
     },
     "files": [
         "/dist",
+        "/bin",
         "/package.json"
     ],
     "scripts": {
@@ -30,13 +31,16 @@
         "test:watch": "vitest watch"
     },
     "dependencies": {
-        "@ai-rules/config": "workspace:*",
-        "@ai-rules/generators": "workspace:*",
-        "@ai-rules/types": "workspace:*",
-        "inquirer": "12.4.1"
+        "handlebars": "4.7.8",
+        "inquirer": "12.4.1",
+        "yaml": "2.7.0",
+        "zod": "3.24.1"
     },
     "devDependencies": {
         "@types/inquirer": "9.0.7",
+        "@types/node": "20",
+        "@types/yaml": "1.9.7",
+        "memfs": "4.17.0",
         "ts-node": "10.9.2"
     },
     "engines": {
