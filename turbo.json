@@ -24,7 +24,6 @@
             "persistent": true
         },
         "build": {
-            "dependsOn": ["^build"],
             "outputs": ["dist/**", "out/**"],
             "inputs": ["$TURBO_DEFAULT$", "src/**/*.ts", "src/**/*.json"]
         },

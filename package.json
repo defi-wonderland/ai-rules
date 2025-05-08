@@ -1,8 +1,8 @@
 {
-    "name": "@wonderland/ai-rules",
+    "name": "ai-rules",
     "version": "0.0.1",
     "private": true,
-    "description": "CLI tool for standardizing AI configuration across teams",
+    "description": "AI configuration file generator",
     "homepage": "https://github.com/defi-wonderland/ai-rules",
     "repository": {
         "type": "git",
@@ -11,6 +11,9 @@
     "license": "MIT",
     "author": "Wonderland",
     "type": "module",
+    "workspaces": [
+        "packages/core"
+    ],
     "scripts": {
         "build": "turbo run build",
         "check-types": "turbo run check-types",
@@ -23,6 +26,7 @@
         "lint": "turbo run lint",
         "lint:fix": "turbo run lint:fix",
         "prepare": "husky && chmod +x ./create-package.sh",
+        "publish-packages": "turbo run build lint test && changeset publish",
         "start": "turbo run start",
         "test": "turbo run test",
         "test:cov": "turbo run test:cov",
@@ -34,9 +38,10 @@
         "package.json": "sort-package-json"
     },
     "devDependencies": {
+        "@changesets/cli": "2.29.3",
         "@commitlint/config-conventional": "19.4.1",
         "@ianvs/prettier-plugin-sort-imports": "4.3.1",
-        "@types/node": "20.3.1",
+        "@types/node": "20",
         "@typescript-eslint/eslint-plugin": "7.18.0",
         "@typescript-eslint/parser": "7.18.0",
         "@vitest/coverage-v8": "2.0.5",
@@ -51,7 +56,8 @@
         "sort-package-json": "2.10.1",
         "turbo": "2.1.1",
         "typescript": "5.5.4",
-        "vitest": "2.0.5"
+        "vitest": "2.0.5",
+        "zod": "3.24.4"
     },
     "packageManager": "pnpm@9.7.1+sha256.46f1bbc8f8020aa9869568c387198f1a813f21fb44c82f400e7d1dbde6c70b40",
     "engines": {
