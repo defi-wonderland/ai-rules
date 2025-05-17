@@ -293,7 +293,9 @@ export class TemplateGenerator {
         if (Array.isArray(currentData)) {
             const seq = new yaml.YAMLSeq();
             const itemSchema =
-                currentZodSchema instanceof ZodArray ? currentZodSchema.element : undefined;
+                currentZodSchema instanceof ZodArray
+                    ? (currentZodSchema.element as ZodType<unknown>)
+                    : undefined;
             currentData.forEach((item) => {
                 seq.add(this.buildYamlNode(item, itemSchema));
             });
