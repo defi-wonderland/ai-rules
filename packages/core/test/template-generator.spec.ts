@@ -325,23 +325,69 @@ describe("TemplateGenerator", () => {
         });
 
         it("uses DefaultCodeRabbitConfig when config.coderabbit is undefined", async () => {
-            const { coderabbit, ...configWithoutCodeRabbit } = mockConfig;
-            const generatorWithoutCodeRabbit = new TemplateGenerator(
-                configWithoutCodeRabbit as Config,
+            const { coderabbit, ...configWithoutExplicitCodeRabbit } = mockConfig;
+
+            generator = new TemplateGenerator(
+                configWithoutExplicitCodeRabbit as Config,
                 outputPath,
             );
+            vi.mocked(fs.stat).mockResolvedValue({ isFile: () => false } as Stats); // Should overwrite
 
-            vi.mocked(fs.stat).mockRejectedValueOnce(new Error("ENOENT"));
-            vi.mocked(fs.writeFile).mockResolvedValueOnce(undefined);
+            await (generator as unknown as TemplateGeneratorPrivate).generateCodeRabbitConfig();
 
-            await (
-                generatorWithoutCodeRabbit as unknown as TemplateGeneratorPrivate
-            ).generateCodeRabbitConfig();
+            expect(fs.writeFile).toHaveBeenCalled();
+            const call = vi.mocked(fs.writeFile).mock.calls[0];
+            expect(call).toBeDefined();
+            const yamlString = call ? (call[1] as string) : "";
 
-            expect(fs.writeFile).toHaveBeenCalledWith(
-                path.join(outputPath, ".coderabbit.yaml"),
-                expect.stringContaining("version: 1.0.0"),
-                "utf8",
+            // Check for header and a few key comments/fields
+            expect(yamlString).toMatch(/# AI Rules configuration file - version 1\.0\.0/);
+            expect(yamlString).toMatch(
+                /# Language for reviews using ISO language code\s*\nlanguage: en-US/,
+            );
+            expect(yamlString).toMatch(
+                /# Custom instructions for review tone \(max 250 chars\)\s*\ntone_instructions: ""/,
+            );
+            expect(yamlString).toMatch(/# Enable early-access features\s*\nearly_access: false/);
+            expect(yamlString).toMatch(/# Review settings\s*\nreviews:/);
+            expect(yamlString).toMatch(
+                /# Review profile - assertive yields more detailed feedback\s*\n  profile: chill/,
+            );
+        });
+
+        it("does not write .coderabbit.yaml if shouldOverwrite returns false", async () => {
+            vi.mocked(fs.stat).mockResolvedValueOnce({ isFile: () => true } as Stats);
+            vi.mocked(fs.readFile).mockResolvedValueOnce("version: 1.0.0");
+
+            await (generator as unknown as TemplateGeneratorPrivate).generateCodeRabbitConfig();
+
+            expect(fs.writeFile).not.toHaveBeenCalled();
+        });
+
+        it("includes field-level comments in the generated YAML", async () => {
+            const { coderabbit, ...configWithoutExplicitCodeRabbit } = mockConfig;
+            generator = new TemplateGenerator(
+                configWithoutExplicitCodeRabbit as Config,
+                outputPath,
+            );
+            vi.mocked(fs.stat).mockResolvedValue({ isFile: () => false } as Stats); // Should overwrite
+
+            await (generator as unknown as TemplateGeneratorPrivate).generateCodeRabbitConfig();
+
+            // Ensure fs.writeFile was called
+            expect(fs.writeFile).toHaveBeenCalled();
+            // Get the YAML string that was written
+            const call = vi.mocked(fs.writeFile).mock.calls[0];
+            expect(call).toBeDefined();
+            const yamlString = call ? (call[1] as string) : "";
+
+            // Check for a field-level comment for 'language'
+            expect(yamlString).toMatch(
+                /# Language for reviews using ISO language code\s*\nlanguage: en-US/,
+            );
+            // Check for a field-level comment for 'tone_instructions' (update to match actual description)
+            expect(yamlString).toMatch(
+                /# Custom instructions for review tone \(max 250 chars\)\s*\ntone_instructions: ""/,
             );
         });
     });
@@ -599,6 +645,36 @@ describe("TemplateGenerator", () => {
             await expect(
                 (generator as unknown as TemplateGeneratorPrivate).writeFile("test.txt", "content"),
             ).rejects.toThrow(error);
+        });
+    });
+
+    describe("injectFieldComments edge cases", () => {
+        it("handles empty objects", () => {
+            const generatorAny = generator as any;
+            const yaml = "{}";
+            const config = {};
+            const schema = { shape: {} };
+            const result = generatorAny.injectFieldComments(yaml, config, schema);
+            expect(result).toBe("{}");
+        });
+
+        it("handles arrays as config", () => {
+            const generatorAny = generator as any;
+            const yaml = "- item1\n- item2";
+            const config = ["item1", "item2"];
+            const schema = undefined;
+            const result = generatorAny.injectFieldComments(yaml, config, schema);
+            expect(result).toContain("- item1");
+            expect(result).toContain("- item2");
+        });
+
+        it("handles unexpected types gracefully", () => {
+            const generatorAny = generator as any;
+            const yaml = "some: value";
+            const config = 42;
+            const schema = undefined;
+            const result = generatorAny.injectFieldComments(yaml, config, schema);
+            expect(result).toContain("some: value");
         });
     });
 });
