@@ -31,6 +31,8 @@ vi.mock("../src/internal/generators/template-generator.js");
 describe("Core Script (run function)", () => {
     let mockInquirerPrompt: MockedFunction<typeof inquirer.prompt>;
     let mockFsAccess: MockedFunction<typeof fs.access>;
+    let mockFsStat: MockedFunction<typeof fs.stat>;
+    let mockFsReadFile: MockedFunction<typeof fs.readFile>;
 
     let spyProcessExit: MockInstance<any>;
     let spyProcessCwd: MockInstance<any>;
@@ -45,6 +47,8 @@ describe("Core Script (run function)", () => {
 
         const fsPromises = await import("fs/promises");
         mockFsAccess = vi.mocked(fsPromises.access);
+        mockFsStat = vi.mocked(fsPromises.stat);
+        mockFsReadFile = vi.mocked(fsPromises.readFile);
     });
 
     beforeEach(() => {
@@ -68,6 +72,20 @@ describe("Core Script (run function)", () => {
 
         mockInquirerPrompt.mockResolvedValue({ confirm: true } as any);
         mockFsAccess.mockRejectedValue(new Error("ENOENT"));
+
+        mockFsStat.mockImplementation(async (p: PathLike) => {
+            if (String(p).endsWith("package.json")) {
+                return { isFile: () => true } as any;
+            }
+            throw new Error("ENOENT");
+        });
+
+        mockFsReadFile.mockImplementation(async (p: PathLike | fs.FileHandle, options?: any) => {
+            if (String(p).endsWith("package.json")) {
+                return JSON.stringify({ workspaces: ["packages/*"] });
+            }
+            return "";
+        });
     });
 
     afterEach(() => {
@@ -202,5 +220,16 @@ describe("Core Script (run function)", () => {
         expect(() => {
             spyProcessExit.getMockImplementation()?.(1);
         }).toThrow("process.exit called with 1");
+    });
+
+    it("handles ProjectRootNotFound error and exits with code 1", async () => {
+        // Mock file system to simulate no package.json with workspaces
+        mockFsStat.mockRejectedValue(new Error("ENOENT"));
+
+        await expect(run()).rejects.toThrow("process.exit called with 1");
+
+        expect(spyConsoleError).toHaveBeenCalledWith("❌ Error during AI Rules installation:");
+        expect(spyConsoleError).toHaveBeenCalledWith("Could not find project root directory");
+        expect(spyProcessExit).toHaveBeenCalledWith(1);
     });
 });

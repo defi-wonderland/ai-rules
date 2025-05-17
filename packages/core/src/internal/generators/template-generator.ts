@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as yaml from "yaml";
-import { ZodArray, ZodDefault, ZodObject, ZodOptional, ZodTypeAny } from "zod";
+import { ZodArray, ZodDefault, ZodObject, ZodOptional, ZodType } from "zod";
 
 import type { Config } from "../schemas/config.js";
 import type { VersionType } from "../utils/index.js";
@@ -174,7 +174,7 @@ export class TemplateGenerator {
     private generateDirectYamlWithComments(
         config: CodeRabbitConfig,
         configVersion: string,
-        schema?: ZodTypeAny,
+        schema?: ZodType<unknown>,
     ): string {
         const doc = new yaml.Document();
 
@@ -193,7 +193,7 @@ export class TemplateGenerator {
     private injectFieldComments(
         yamlString: string,
         config: unknown,
-        schema: ZodTypeAny,
+        schema: ZodType<unknown>,
         indentLevel = 0,
     ): string {
         const lines = yamlString.split("\n");
@@ -203,12 +203,15 @@ export class TemplateGenerator {
         const isObject = (val: unknown): val is Record<string, unknown> =>
             typeof val === "object" && val !== null && !Array.isArray(val);
 
-        const getFieldDescriptions = (obj: unknown, sch: ZodTypeAny): Record<string, string> => {
+        const getFieldDescriptions = (
+            obj: unknown,
+            sch: ZodType<unknown>,
+        ): Record<string, string> => {
             const descs: Record<string, string> = {};
-            const s = this.safelyGetInnerSchema(sch);
-            if (s instanceof ZodObject && isObject(obj)) {
+            const unwrappedSchema = this.safelyGetInnerSchema(sch);
+            if (unwrappedSchema instanceof ZodObject && isObject(obj)) {
                 for (const key of Object.keys(obj)) {
-                    const desc = this.getDescription(key, s);
+                    const desc = this.getDescription(key, unwrappedSchema);
                     if (desc) descs[key] = desc;
                 }
             }
@@ -223,17 +226,21 @@ export class TemplateGenerator {
                 const fieldMatch = new RegExp(`^${indent}([a-zA-Z0-9_]+):`).exec(line);
                 const fieldName =
                     fieldMatch && typeof fieldMatch[1] === "string" ? fieldMatch[1] : undefined;
-                if (fieldName && fieldDescriptions[fieldName]) {
-                    resultLines.push(`${indent}# ${fieldDescriptions[fieldName]}`);
+                if (
+                    fieldName &&
+                    Object.prototype.hasOwnProperty.call(fieldDescriptions, fieldName)
+                ) {
+                    const description = fieldDescriptions[fieldName];
+                    resultLines.push(`${indent}# ${description}`);
                 }
                 resultLines.push(line);
 
                 // If this field is an object or array, recursively process its block
                 if (fieldName && isObject(config)) {
                     const value = config[fieldName];
-                    let fieldSchema: ZodTypeAny | undefined;
+                    let fieldSchema: ZodType<unknown> | undefined;
                     if (innerSchema instanceof ZodObject) {
-                        const shape = innerSchema.shape as Record<string, ZodTypeAny>;
+                        const shape = innerSchema.shape as Record<string, ZodType<unknown>>;
                         fieldSchema = shape[fieldName];
                     }
                     const actualFieldSchema = this.safelyGetInnerSchema(fieldSchema);
@@ -273,10 +280,7 @@ export class TemplateGenerator {
      * @param currentZodSchema The Zod schema for the current data segment.
      * @returns A yaml.Node representing the data.
      */
-    private buildYamlNode(
-        currentData: unknown,
-        currentZodSchema: ZodTypeAny | undefined,
-    ): yaml.Node {
+    private buildYamlNode(currentData: unknown, currentZodSchema?: ZodType<unknown>): yaml.Node {
         // Handle primitives
         if (
             currentData === null ||
@@ -299,15 +303,15 @@ export class TemplateGenerator {
         // Handle objects
         const map = new yaml.YAMLMap();
         if (typeof currentData === "object" && currentData !== null) {
-            for (const [key, value] of Object.entries(currentData as Record<string, unknown>)) {
+            const dataAsRecord = currentData as Record<string, unknown>;
+            for (const [key, value] of Object.entries(dataAsRecord)) {
                 // Pass currentZodSchema directly; getDescription will unwrap and check type
                 const fieldDescription = this.getDescription(key, currentZodSchema);
 
-                let fieldSchemaForValue: ZodTypeAny | undefined;
+                let fieldSchemaForValue: ZodType<unknown> | undefined;
                 if (currentZodSchema instanceof ZodObject) {
-                    fieldSchemaForValue = (
-                        currentZodSchema as ZodObject<Record<string, ZodTypeAny>>
-                    ).shape?.[key];
+                    const shape = currentZodSchema.shape as Record<string, ZodType<unknown>>;
+                    fieldSchemaForValue = shape[key];
                 }
                 const actualFieldSchema = this.safelyGetInnerSchema(fieldSchemaForValue);
 
@@ -324,7 +328,29 @@ export class TemplateGenerator {
         return map;
     }
 
-    private getDescription = (fieldName: string, parentSchema?: ZodTypeAny): string | undefined => {
+    /**
+     * Helper to safely get an inner schema
+     * @param s The schema to unwrap
+     * @returns The inner schema if wrapped, otherwise the original schema
+     */
+    private safelyGetInnerSchema = <T>(s?: ZodType<T>): ZodType<T> | undefined => {
+        if (!s) return undefined;
+        if (s instanceof ZodDefault || s instanceof ZodOptional) {
+            return s._def.innerType as ZodType<T>;
+        }
+        return s;
+    };
+
+    /**
+     * Gets the description from a schema field
+     * @param fieldName The field name to get the description for
+     * @param parentSchema The parent schema containing the field
+     * @returns The field description if found
+     */
+    private getDescription = (
+        fieldName: string,
+        parentSchema?: ZodType<unknown>,
+    ): string | undefined => {
         // Safely get the innermost schema, unwrapping ZodDefault/ZodOptional
         const actualSchema = this.safelyGetInnerSchema(parentSchema);
 
@@ -332,34 +358,28 @@ export class TemplateGenerator {
             return undefined;
         }
 
-        const shape = actualSchema.shape as Record<string, ZodTypeAny>; // actualSchema is now ZodObject
-        const fieldSchema = shape?.[fieldName];
+        const shape = actualSchema.shape as Record<string, ZodType<unknown>>;
+        const fieldSchema = shape[fieldName];
 
         if (!fieldSchema) return undefined;
 
         // Try to get description from the field schema itself (possibly wrapped)
-        if (fieldSchema.description) {
-            return fieldSchema.description;
+        const schemaWithDesc = fieldSchema as unknown as { description?: string };
+        if (schemaWithDesc.description) {
+            return schemaWithDesc.description;
         }
 
         // If fieldSchema is wrapped (ZodDefault/ZodOptional), get description from its inner type
         if (fieldSchema instanceof ZodDefault || fieldSchema instanceof ZodOptional) {
-            const innerType = fieldSchema._def.innerType as ZodTypeAny | undefined;
-            if (innerType?.description) {
-                return innerType.description;
+            const innerType = this.safelyGetInnerSchema(fieldSchema);
+            if (innerType) {
+                const innerWithDesc = innerType as unknown as { description?: string };
+                if (innerWithDesc.description) {
+                    return innerWithDesc.description;
+                }
             }
         }
         return undefined;
-    };
-
-    // Helper to safely get an inner schema (remains the same)
-    private safelyGetInnerSchema = (s?: ZodTypeAny): ZodTypeAny | undefined => {
-        if (!s) return undefined;
-        if (s instanceof ZodDefault || s instanceof ZodOptional) {
-            const innerType: unknown = s._def.innerType;
-            return innerType as ZodTypeAny;
-        }
-        return s;
     };
 
     /**

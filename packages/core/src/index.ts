@@ -16,37 +16,86 @@ import {
 import { baseConfig } from "./internal/templates/defaults/index.js";
 
 /**
+ * Custom error for when the project root directory cannot be found
+ */
+class ProjectRootNotFound extends Error {
+    constructor(message = "Could not find project root directory") {
+        super(message);
+        this.name = "ProjectRootNotFound";
+    }
+}
+
+/**
+ * Type for package.json content
+ */
+interface PackageJson {
+    workspaces?: string[];
+}
+
+/**
+ * Gets the root directory of the project by traversing up until finding package.json
+ * @returns {Promise<string>} The absolute path to the root directory
+ * @throws {ProjectRootNotFound} If root directory cannot be found
+ */
+async function findRootDir(): Promise<string> {
+    let currentDir = process.cwd();
+    const root = path.parse(currentDir).root;
+
+    while (currentDir !== root) {
+        const pkgJsonPath = path.join(currentDir, "package.json");
+        try {
+            const stats = await fs.stat(pkgJsonPath);
+            if (stats.isFile()) {
+                const content = await fs.readFile(pkgJsonPath, "utf8");
+                const pkg = JSON.parse(content) as PackageJson;
+                // Check if this is the root package.json by looking for workspaces
+                if (pkg.workspaces) {
+                    return currentDir;
+                }
+            }
+        } catch (err) {
+            // Ignore errors and continue searching
+        }
+        currentDir = path.dirname(currentDir);
+    }
+    throw new ProjectRootNotFound();
+}
+
+/**
  * Main function to run the AI rules installation script.
  */
 async function run(): Promise<void> {
     console.log("Starting AI Rules installation...");
 
-    // 1. Ask for confirmation if files might be overwritten
-    const outputPath = process.cwd();
-    const coderabbitPath = path.join(outputPath, ".coderabbit.yaml");
-    const cursorPath = path.join(outputPath, ".cursor");
+    try {
+        // Find the root directory first
+        const outputPath = await findRootDir();
+        console.log(`Using root directory: ${outputPath}`);
 
-    let shouldPrompt = false;
-    try {
-        await fs.access(coderabbitPath);
-        shouldPrompt = true;
-    } catch (err: unknown) {
-        if (!isNodeErrorWithCode(err) || err.code !== "ENOENT") {
-            // Log and proceed, don't exit
-            console.error(`File check failed for: ${coderabbitPath}`);
-        }
-    }
-    try {
-        await fs.access(cursorPath);
-        shouldPrompt = true;
-    } catch (err: unknown) {
-        if (!isNodeErrorWithCode(err) || err.code !== "ENOENT") {
-            // Log and proceed, don't exit
-            console.error(`File check failed for: ${cursorPath}`);
-        }
-    }
+        // 1. Ask for confirmation if files might be overwritten
+        const coderabbitPath = path.join(outputPath, ".coderabbit.yaml");
+        const cursorPath = path.join(outputPath, ".cursor");
 
-    try {
+        let shouldPrompt = false;
+        try {
+            await fs.access(coderabbitPath);
+            shouldPrompt = true;
+        } catch (err: unknown) {
+            if (!isNodeErrorWithCode(err) || err.code !== "ENOENT") {
+                // Log and proceed, don't exit
+                console.error(`File check failed for: ${coderabbitPath}`);
+            }
+        }
+        try {
+            await fs.access(cursorPath);
+            shouldPrompt = true;
+        } catch (err: unknown) {
+            if (!isNodeErrorWithCode(err) || err.code !== "ENOENT") {
+                // Log and proceed, don't exit
+                console.error(`File check failed for: ${cursorPath}`);
+            }
+        }
+
         if (shouldPrompt) {
             const confirm = await confirmOverwrite();
             if (!confirm) {
@@ -85,15 +134,10 @@ async function run(): Promise<void> {
 }
 
 /**
- * Type guard to check if an error is a NodeJS error with a code property
+ * Type guard for NodeJS.ErrnoException
  */
-function isNodeErrorWithCode(err: unknown): err is { code: string } {
-    return (
-        typeof err === "object" &&
-        err !== null &&
-        "code" in err &&
-        typeof (err as { code: unknown }).code === "string"
-    );
+function isNodeErrorWithCode(error: unknown): error is NodeJS.ErrnoException {
+    return error instanceof Error && "code" in error;
 }
 
 /**
