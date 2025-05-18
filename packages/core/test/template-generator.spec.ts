@@ -1,14 +1,14 @@
 import { type PathLike, type Stats } from "fs";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
 import { TemplateGenerator } from "../src/internal/generators/template-generator.js";
 import {
     Config,
+    ConfigSchema,
     DefaultCodeRabbitConfig,
-    ConfigSchema as ImportedConfigSchema,
     TeamType,
 } from "../src/internal/schemas/config.js";
 
@@ -300,7 +300,7 @@ describe("TemplateGenerator", () => {
                     coderabbit: "actual string data for coderabbit field",
                 };
                 const testSpecificGenerator = new TemplateGenerator(
-                    testConfigData as any,
+                    testConfigData as unknown as any,
                     outputPath,
                 );
                 vi.spyOn(
@@ -396,7 +396,7 @@ describe("TemplateGenerator", () => {
             // Also check via generateDirectYamlWithComments to ensure no crash and basic output
             // @ts-expect-error accessing private member
             const yamlContent = generator.generateDirectYamlWithComments(
-                testDataWithVersion,
+                testDataWithVersion as unknown as any,
                 "1.0.0",
                 testSchema,
             );
@@ -420,7 +420,7 @@ describe("TemplateGenerator", () => {
 
             // @ts-expect-error accessing private member
             const yamlContent = generator.generateDirectYamlWithComments(
-                testDataWithVersion,
+                testDataWithVersion as unknown as any,
                 "1.0.0",
                 testSchema,
             );
@@ -452,7 +452,7 @@ describe("TemplateGenerator", () => {
 
             // @ts-expect-error accessing private member
             const yamlContent = generator.generateDirectYamlWithComments(
-                testDataWithVersion,
+                testDataWithVersion as unknown as any,
                 "1.0.0",
                 testSchema,
             );
@@ -480,7 +480,7 @@ describe("TemplateGenerator", () => {
 
             // @ts-expect-error accessing private member
             const yamlContent = generator.generateDirectYamlWithComments(
-                testDataWithVersion,
+                testDataWithVersion as unknown as any,
                 "1.0.0",
                 testSchema,
             );
@@ -751,7 +751,7 @@ describe("TemplateGenerator", () => {
 
     describe("injectFieldComments edge cases", () => {
         it("handles empty objects", () => {
-            const generatorAny = generator as any;
+            const generatorAny = generator as unknown as any;
             const yaml = "{}";
             const config = {};
             const schema = { shape: {} };
@@ -760,7 +760,7 @@ describe("TemplateGenerator", () => {
         });
 
         it("handles arrays as config", () => {
-            const generatorAny = generator as any;
+            const generatorAny = generator as unknown as any;
             const yaml = "- item1\n- item2";
             const config = ["item1", "item2"];
             const schema = undefined;
@@ -770,7 +770,7 @@ describe("TemplateGenerator", () => {
         });
 
         it("handles unexpected types gracefully", () => {
-            const generatorAny = generator as any;
+            const generatorAny = generator as unknown as any;
             const yaml = "some: value";
             const config = 42;
             const schema = undefined;

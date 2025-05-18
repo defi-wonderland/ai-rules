@@ -70,7 +70,7 @@ describe("Core Script (run function)", () => {
         spyConsoleError = vi.spyOn(console, "error").mockImplementation(() => {});
         spyConsoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-        mockInquirerPrompt.mockResolvedValue({ confirm: true } as any);
+        mockInquirerPrompt.mockResolvedValue({ confirm: true } as unknown as any);
         mockFsAccess.mockRejectedValue(new Error("ENOENT"));
 
         mockFsStat.mockImplementation(async (p: PathLike) => {
@@ -196,7 +196,7 @@ describe("Core Script (run function)", () => {
 
     it("handles non-ENOENT error during fs.access check and proceeds without prompt", async () => {
         const accessError = new Error("Permission denied");
-        (accessError as any).code = "EACCES";
+        (accessError as unknown as any).code = "EACCES";
         mockFsAccess.mockRejectedValue(accessError);
 
         await run();
@@ -229,7 +229,275 @@ describe("Core Script (run function)", () => {
         await expect(run()).rejects.toThrow("process.exit called with 1");
 
         expect(spyConsoleError).toHaveBeenCalledWith("❌ Error during AI Rules installation:");
-        expect(spyConsoleError).toHaveBeenCalledWith("Could not find project root directory");
+        expect(spyConsoleError).toHaveBeenCalledWith(
+            "Could not find project root. Looked for pnpm-workspace.yaml, package.json with 'workspaces', or package.json with 'name'.",
+        );
         expect(spyProcessExit).toHaveBeenCalledWith(1);
+    });
+});
+
+// Helper function to simulate fs.stat responses for findRootDir tests
+const mockFsStatImplementation = (existingFiles: Record<string, "file" | "dir">) => {
+    return async (p: PathLike): Promise<Stats> => {
+        const filePath = path.normalize(String(p));
+        if (existingFiles[filePath]) {
+            return {
+                isFile: () => existingFiles[filePath] === "file",
+                isDirectory: () => existingFiles[filePath] === "dir",
+            } as Stats;
+        }
+        const error = new Error(`ENOENT: no such file or directory, stat '${filePath}'`);
+        (error as unknown as any).code = "ENOENT";
+        throw error;
+    };
+};
+
+// Helper function to simulate fs.readFile responses for findRootDir tests
+const mockFsReadFileImplementation = (fileContents: Record<string, string>) => {
+    return async (p: PathLike | fsPromises.FileHandle, options?: any): Promise<string> => {
+        const filePath = path.normalize(String(p));
+        if (fileContents[filePath]) {
+            return fileContents[filePath];
+        }
+        const error = new Error(`ENOENT: no such file or directory, open '${filePath}'`);
+        (error as unknown as any).code = "ENOENT";
+        throw error;
+    };
+};
+
+describe("findRootDir", () => {
+    let spyProcessCwd: MockInstance<any>;
+    let mockFsStat: MockedFunction<typeof fsPromises.stat>;
+    let mockFsReadFile: MockedFunction<typeof fsPromises.readFile>;
+
+    let findRootDirFunction: () => Promise<string>;
+
+    beforeEach(async () => {
+        vi.resetModules();
+        spyProcessCwd = vi.spyOn(process, "cwd").mockReturnValue("/project/packages/module-a");
+
+        vi.mocked(fsPromises.stat).mockReset();
+        vi.mocked(fsPromises.readFile).mockReset();
+
+        mockFsStat = vi.mocked(fsPromises.stat);
+        mockFsReadFile = vi.mocked(fsPromises.readFile);
+
+        const indexModule = await import("../src/index.js");
+        findRootDirFunction = indexModule.findRootDir;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.resetModules();
+    });
+
+    it("finds root with pnpm-workspace.yaml in current directory", async () => {
+        spyProcessCwd.mockReturnValue("/project");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/pnpm-workspace.yaml": "file",
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("finds root with pnpm-workspace.yaml in parent directory", async () => {
+        spyProcessCwd.mockReturnValue("/project/packages/module-a");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/pnpm-workspace.yaml": "file",
+                "/project/packages/module-a/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/packages/module-a/package.json": JSON.stringify({ name: "module-a" }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("finds root with package.json (workspaces) in current directory", async () => {
+        spyProcessCwd.mockReturnValue("/project");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/package.json": JSON.stringify({ workspaces: ["packages/*"] }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("finds root with package.json (workspaces) in parent directory", async () => {
+        spyProcessCwd.mockReturnValue("/project/packages/module-a");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/package.json": "file",
+                "/project/packages/module-a/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/package.json": JSON.stringify({ workspaces: ["packages/*"] }),
+                "/project/packages/module-a/package.json": JSON.stringify({ name: "module-a" }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("finds root with package.json (name) as fallback in current directory", async () => {
+        spyProcessCwd.mockReturnValue("/project");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/package.json": JSON.stringify({ name: "my-project" }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("finds root with package.json (name) as fallback in parent, preferring closest to cwd", async () => {
+        spyProcessCwd.mockReturnValue("/project/packages/module-a");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/packages/package.json": "file",
+                "/project/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/packages/package.json": JSON.stringify({
+                    name: "packages-level-project",
+                }),
+                "/project/package.json": JSON.stringify({ name: "root-level-project" }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project/packages");
+    });
+
+    it("pnpm-workspace.yaml takes precedence over package.json with workspaces in same dir", async () => {
+        spyProcessCwd.mockReturnValue("/project");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/pnpm-workspace.yaml": "file",
+                "/project/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/package.json": JSON.stringify({ workspaces: ["packages/*"] }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("package.json with workspaces takes precedence over package.json with name in same dir", async () => {
+        spyProcessCwd.mockReturnValue("/project");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/package.json": JSON.stringify({
+                    name: "my-project",
+                    workspaces: ["packages/*"],
+                }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("throws ProjectRootNotFound if no indicators are found up to filesystem root", async () => {
+        spyProcessCwd.mockReturnValue("/some/deep/path");
+        mockFsStat.mockImplementation(mockFsStatImplementation({}));
+        mockFsReadFile.mockImplementation(mockFsReadFileImplementation({}));
+
+        await expect(findRootDirFunction()).rejects.toThrow(
+            "Could not find project root. Looked for pnpm-workspace.yaml, package.json with 'workspaces', or package.json with 'name'.",
+        );
+    });
+
+    it("ignores malformed package.json and continues search", async () => {
+        spyProcessCwd.mockReturnValue("/project/packages/module-a");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/packages/module-a/package.json": "file",
+                "/project/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/packages/module-a/package.json": "{ malformed json",
+                "/project/package.json": JSON.stringify({ name: "root-project" }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("ignores pnpm-workspace.yaml if it is a directory", async () => {
+        spyProcessCwd.mockReturnValue("/project/module-a");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/module-a/pnpm-workspace.yaml": "dir",
+                "/project/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/package.json": JSON.stringify({ name: "actual-root" }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project");
+    });
+
+    it("finds root if indicator is at the filesystem root itself", async () => {
+        spyProcessCwd.mockReturnValue("/");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/pnpm-workspace.yaml": "file",
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/");
+    });
+
+    it("correctly identifies single package root at cwd if parent has no indicators", async () => {
+        spyProcessCwd.mockReturnValue("/project/module-a");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/module-a/package.json": "file",
+                // No other indicators in /project or /
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/module-a/package.json": JSON.stringify({ name: "module-a" }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project/module-a");
+    });
+
+    it("correctly identifies single package root in parent if cwd has no indicators", async () => {
+        spyProcessCwd.mockReturnValue("/project/module-a/src");
+        mockFsStat.mockImplementation(
+            mockFsStatImplementation({
+                "/project/module-a/package.json": "file",
+            }),
+        );
+        mockFsReadFile.mockImplementation(
+            mockFsReadFileImplementation({
+                "/project/module-a/package.json": JSON.stringify({ name: "module-a" }),
+            }),
+        );
+        await expect(findRootDirFunction()).resolves.toBe("/project/module-a");
     });
 });

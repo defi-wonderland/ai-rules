@@ -32,36 +32,79 @@ class ProjectRootNotFound extends Error {
  * Type for package.json content
  */
 interface PackageJson {
-    workspaces?: string[];
+    // Allow object form for workspaces
+    workspaces?: string[] | Record<string, unknown>;
+    // Add name field for single package check
+    name?: string;
 }
 
 /**
- * Gets the root directory of the project by traversing up until finding package.json
+ * Gets the root directory of the project by traversing up until finding a root indicator.
+ * Root indicators, in order of preference:
+ * 1. pnpm-workspace.yaml file
+ * 2. package.json with a "workspaces" field
+ * Fallback: Uses the path of the first package.json with a "name" field found during upward traversal,
+ * if no primary root indicators are found.
  * @returns {Promise<string>} The absolute path to the root directory
  * @throws {ProjectRootNotFound} If root directory cannot be found
  */
 async function findRootDir(): Promise<string> {
     let currentDir = process.cwd();
     const root = path.parse(currentDir).root;
+    let candidateSinglePackageRoot: string | null = null;
 
-    while (currentDir !== root) {
+    do {
+        // 1. Check for pnpm-workspace.yaml
+        const pnpmWorkspacePath = path.join(currentDir, "pnpm-workspace.yaml");
+        try {
+            const pnpmStats = await fs.stat(pnpmWorkspacePath);
+            if (pnpmStats.isFile()) {
+                return currentDir; // Found root via pnpm-workspace.yaml
+            }
+        } catch (err) {
+            // Ignore if pnpm-workspace.yaml doesn't exist or other errors
+        }
+
+        // 2. Check for package.json
         const pkgJsonPath = path.join(currentDir, "package.json");
         try {
             const stats = await fs.stat(pkgJsonPath);
             if (stats.isFile()) {
                 const content = await fs.readFile(pkgJsonPath, "utf8");
                 const pkg = JSON.parse(content) as PackageJson;
-                // Check if this is the root package.json by looking for workspaces
-                if (pkg.workspaces) {
-                    return currentDir;
+
+                // Check for workspaces field
+                if (
+                    pkg.workspaces &&
+                    (Array.isArray(pkg.workspaces) || typeof pkg.workspaces === "object")
+                ) {
+                    return currentDir; // Found root via package.json with workspaces
+                }
+
+                // If it has a name field and we haven't found a candidate yet, store it.
+                // This will be the one closest to process.cwd().
+                if (pkg.name && candidateSinglePackageRoot === null) {
+                    candidateSinglePackageRoot = currentDir;
                 }
             }
         } catch (err) {
-            // Ignore errors and continue searching
+            // Ignore errors (e.g., file not found, JSON parse error) and continue searching
+        }
+
+        if (currentDir === root) {
+            break;
         }
         currentDir = path.dirname(currentDir);
+    } while (true);
+
+    // After loop, check if we found a candidate for single package root
+    if (candidateSinglePackageRoot) {
+        return candidateSinglePackageRoot;
     }
-    throw new ProjectRootNotFound();
+
+    throw new ProjectRootNotFound(
+        "Could not find project root. Looked for pnpm-workspace.yaml, package.json with 'workspaces', or package.json with 'name'.",
+    );
 }
 
 /**
@@ -180,4 +223,4 @@ if (currentFilePath === entryPointPath) {
     void run();
 }
 
-export { run };
+export { run, findRootDir };

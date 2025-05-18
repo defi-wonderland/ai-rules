@@ -99,11 +99,11 @@ Here's how you can contribute a new rule:
 7.  **Commit and Push**:
     -   Add the changes in [`packages/core/src/internal/templates/cursor/index.ts`](packages/core/src/internal/templates/cursor/index.ts) and any newly generated/updated rule files to your commit.
 
-If you still need help feel free to message the Offchain Team!
+If you still need help, feel free to message the Offchain Team!
 
 ## Release Process
 
-When preparing a new release of the package the version number must be manually updated. This is because the current publishing workflow (`.github/workflows/publish.yml`) publishes the version as it exists in the `package.json` files.
+When preparing a new release of the package, the version number must be manually updated. This is because the current publishing workflow (`.github/workflows/publish.yml`) publishes the version as it exists in the `package.json` files.
 
 To release a new version:
 
