@@ -1,5 +1,5 @@
-import { type PathLike } from "fs";
-import * as fs from "fs/promises";
+import { type PathLike, type Stats } from "fs";
+import * as fsPromises from "fs/promises";
 import * as path from "path";
 import type { MockedFunction, MockInstance } from "vitest";
 import inquirer from "inquirer";
@@ -30,9 +30,9 @@ vi.mock("../src/internal/generators/template-generator.js");
 
 describe("Core Script (run function)", () => {
     let mockInquirerPrompt: MockedFunction<typeof inquirer.prompt>;
-    let mockFsAccess: MockedFunction<typeof fs.access>;
-    let mockFsStat: MockedFunction<typeof fs.stat>;
-    let mockFsReadFile: MockedFunction<typeof fs.readFile>;
+    let mockFsAccess: MockedFunction<typeof fsPromises.access>;
+    let mockFsStat: MockedFunction<typeof fsPromises.stat>;
+    let mockFsReadFile: MockedFunction<typeof fsPromises.readFile>;
 
     let spyProcessExit: MockInstance<any>;
     let spyProcessCwd: MockInstance<any>;
@@ -45,10 +45,10 @@ describe("Core Script (run function)", () => {
     beforeAll(async () => {
         mockInquirerPrompt = vi.mocked(inquirer.prompt);
 
-        const fsPromises = await import("fs/promises");
-        mockFsAccess = vi.mocked(fsPromises.access);
-        mockFsStat = vi.mocked(fsPromises.stat);
-        mockFsReadFile = vi.mocked(fsPromises.readFile);
+        const fsPromisesImport = await import("fs/promises");
+        mockFsAccess = vi.mocked(fsPromisesImport.access);
+        mockFsStat = vi.mocked(fsPromisesImport.stat);
+        mockFsReadFile = vi.mocked(fsPromisesImport.readFile);
     });
 
     beforeEach(() => {
@@ -75,12 +75,12 @@ describe("Core Script (run function)", () => {
 
         mockFsStat.mockImplementation(async (p: PathLike) => {
             if (String(p).endsWith("package.json")) {
-                return { isFile: () => true } as any;
+                return { isFile: () => true } as Stats;
             }
             throw new Error("ENOENT");
         });
 
-        mockFsReadFile.mockImplementation(async (p: PathLike | fs.FileHandle, options?: any) => {
+        mockFsReadFile.mockImplementation(async (p: PathLike | fsPromises.FileHandle) => {
             if (String(p).endsWith("package.json")) {
                 return JSON.stringify({ workspaces: ["packages/*"] });
             }

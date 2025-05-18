@@ -16,10 +16,13 @@ import {
 import { baseConfig } from "./internal/templates/defaults/index.js";
 
 /**
- * Custom error for when the project root directory cannot be found
+ * Thrown when `ai-rules` cannot locate the project root.
+ *
+ * The search walks up the directory tree looking for a `package.json`
+ * containing a `workspaces` field
  */
 class ProjectRootNotFound extends Error {
-    constructor(message = "Could not find project root directory") {
+    constructor(message: string = "Could not find project root directory") {
         super(message);
         this.name = "ProjectRootNotFound";
     }
@@ -134,10 +137,16 @@ async function run(): Promise<void> {
 }
 
 /**
- * Type guard for NodeJS.ErrnoException
+ * Type guard for NodeJS.ErrnoException that ensures both:
+ * 1. The error is an instance of Error
+ * 2. The error has a 'code' property of type string
  */
 function isNodeErrorWithCode(error: unknown): error is NodeJS.ErrnoException {
-    return error instanceof Error && "code" in error;
+    return (
+        error instanceof Error &&
+        Object.hasOwn(error, "code") &&
+        typeof (error as NodeJS.ErrnoException).code === "string"
+    );
 }
 
 /**

@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as yaml from "yaml";
-import { ZodArray, ZodDefault, ZodObject, ZodOptional, ZodType } from "zod";
+import { z, ZodArray, ZodDefault, ZodObject, ZodOptional, ZodType, ZodTypeAny } from "zod";
 
 import type { Config } from "../schemas/config.js";
 import type { VersionType } from "../utils/index.js";
@@ -144,24 +144,54 @@ export class TemplateGenerator {
             return;
         }
 
-        const configData: CodeRabbitConfig = {
+        const dataForYaml = {
+            version: currentVersion,
             ...(this.config.coderabbit ?? DefaultCodeRabbitConfig),
         };
 
-        // Get the CodeRabbit schema
-        const codeRabbitSchema = ConfigSchema.shape.coderabbit;
+        // Define a schema for the YAML structure, including the version field
+        // This ensures comments can be generated for the version field as well.
+        const versionFieldSchema = z.string().describe("Configuration file version.");
+        const coderabbitObjectSchema = ConfigSchema.shape.coderabbit;
+        let schemaForYaml: ZodObject<Record<string, ZodType<unknown>>, "strip", ZodTypeAny>;
 
-        // Generate YAML without comments
+        if (coderabbitObjectSchema instanceof ZodObject) {
+            schemaForYaml = z.object({
+                version: versionFieldSchema,
+                ...coderabbitObjectSchema.shape,
+            }) as ZodObject<Record<string, ZodType<unknown>>, "strip", ZodTypeAny>;
+        } else {
+            // Fallback if CodeRabbit schema is not an object (e.g. optional or default)
+            // This case might need specific handling based on actual ConfigSchema structure
+            // For now, creating a simple schema, assuming CodeRabbit itself is an object schema effectively
+            const unwrappedCoderabbitSchema = this.safelyGetInnerSchema(coderabbitObjectSchema);
+            if (unwrappedCoderabbitSchema instanceof ZodObject) {
+                schemaForYaml = z.object({
+                    version: versionFieldSchema,
+                    ...unwrappedCoderabbitSchema.shape,
+                }) as ZodObject<Record<string, ZodType<unknown>>, "strip", ZodTypeAny>;
+            } else {
+                // This should never happen if DefaultCodeRabbitConfig is an object
+                // and CodeRabbit in ConfigSchema is z.object(...).default(...)
+                console.warn(
+                    "Could not construct extended schema for .coderabbit.yaml with version. Defaulting to CodeRabbit schema only for comments.",
+                );
+                // Minimal schema if unwrapping fails
+                schemaForYaml = z.object({ version: versionFieldSchema }) as ZodObject<
+                    Record<string, ZodType<unknown>>,
+                    "strip",
+                    ZodTypeAny
+                >;
+            }
+        }
+
         const yamlContent = this.generateDirectYamlWithComments(
-            { ...configData },
-            currentVersion,
-            codeRabbitSchema,
+            dataForYaml, // Pass the combined data
+            currentVersion, // Still needed for the header comment
+            schemaForYaml, // Pass the schema that includes the version
         );
 
-        // Inject field-level comments
-        const commentedYaml = this.injectFieldComments(yamlContent, configData, codeRabbitSchema);
-
-        await this.writeFile(filePath, commentedYaml);
+        await this.writeFile(filePath, yamlContent);
     }
 
     /**
@@ -172,7 +202,7 @@ export class TemplateGenerator {
      * @returns A formatted YAML string with comments
      */
     private generateDirectYamlWithComments(
-        config: CodeRabbitConfig,
+        config: CodeRabbitConfig & { version: string },
         configVersion: string,
         schema?: ZodType<unknown>,
     ): string {
@@ -183,8 +213,13 @@ export class TemplateGenerator {
         const innerSchema = this.safelyGetInnerSchema(schema);
         doc.contents = this.buildYamlNode(config, innerSchema);
 
-        // Configure toString for desired output, like preventing line wrapping for scalars
-        return doc.toString({ lineWidth: 0, singleQuote: false });
+        // Get the basic YAML without field comments
+        const basicYaml = doc.toString({ lineWidth: 0, singleQuote: false });
+
+        // Now manually add field-level comments using injectFieldComments
+        // Provide a fallback empty object schema if none is available
+        const effectiveSchema = schema || innerSchema || z.object({});
+        return this.injectFieldComments(basicYaml, config, effectiveSchema);
     }
 
     /**
@@ -223,9 +258,12 @@ export class TemplateGenerator {
         while (i < lines.length) {
             const line = lines[i];
             if (typeof line === "string") {
-                const fieldMatch = new RegExp(`^${indent}([a-zA-Z0-9_]+):`).exec(line);
-                const fieldName =
-                    fieldMatch && typeof fieldMatch[1] === "string" ? fieldMatch[1] : undefined;
+                const fieldMatch = new RegExp(`^${indent}("?[^":]+"?):`).exec(line);
+                const rawKey =
+                    fieldMatch && typeof fieldMatch[1] === "string"
+                        ? fieldMatch[1].replace(/"/g, "")
+                        : undefined;
+                const fieldName = rawKey;
                 if (
                     fieldName &&
                     Object.prototype.hasOwnProperty.call(fieldDescriptions, fieldName)
@@ -320,6 +358,7 @@ export class TemplateGenerator {
                 const valueNode = this.buildYamlNode(value, actualFieldSchema);
                 const pair = new yaml.Pair(key, valueNode);
 
+                // Add field description as comment
                 if (fieldDescription) {
                     (pair as unknown as { commentBefore: string }).commentBefore =
                         fieldDescription.trim();
@@ -337,10 +376,13 @@ export class TemplateGenerator {
      */
     private safelyGetInnerSchema = <T>(s?: ZodType<T>): ZodType<T> | undefined => {
         if (!s) return undefined;
-        if (s instanceof ZodDefault || s instanceof ZodOptional) {
-            return s._def.innerType as ZodType<T>;
+
+        let schema = s;
+        // Unwrap nested ZodDefault/ZodOptional schemas
+        while (schema instanceof ZodDefault || schema instanceof ZodOptional) {
+            schema = schema._def.innerType as ZodType<T>;
         }
-        return s;
+        return schema;
     };
 
     /**
@@ -365,13 +407,13 @@ export class TemplateGenerator {
 
         if (!fieldSchema) return undefined;
 
-        // Try to get description from the field schema itself (possibly wrapped)
+        // Try to get description from the field schema itself
         const schemaWithDesc = fieldSchema as unknown as { description?: string };
         if (schemaWithDesc.description) {
             return schemaWithDesc.description;
         }
 
-        // If fieldSchema is wrapped (ZodDefault/ZodOptional), get description from its inner type
+        // If no direct description, check if it's wrapped and get description from inner schema
         if (fieldSchema instanceof ZodDefault || fieldSchema instanceof ZodOptional) {
             const innerType = this.safelyGetInnerSchema(fieldSchema);
             if (innerType) {
@@ -381,6 +423,7 @@ export class TemplateGenerator {
                 }
             }
         }
+
         return undefined;
     };
 
