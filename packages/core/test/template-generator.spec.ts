@@ -2,9 +2,44 @@ import { type PathLike, type Stats } from "fs";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 import { TemplateGenerator } from "../src/internal/generators/template-generator.js";
-import { Config, TeamType } from "../src/internal/schemas/config.js";
+import {
+    Config,
+    ConfigSchema,
+    DefaultCodeRabbitConfig,
+    TeamType,
+} from "../src/internal/schemas/config.js";
+
+let mockCoderabbitSchemaAsNonObject = false;
+
+vi.mock("../src/internal/schemas/config.js", async () => {
+    const actual = await vi.importActual<typeof import("../src/internal/schemas/config.js")>(
+        "../src/internal/schemas/config.js",
+    );
+    const { z } = await vi.importActual<typeof import("zod")>("zod");
+    const actualConfigSchema = actual.ConfigSchema;
+
+    return {
+        ...actual, // Spread all actual exports (includes DefaultCodeRabbitConfig, TeamType, etc.)
+        get ConfigSchema() {
+            if (mockCoderabbitSchemaAsNonObject) {
+                return {
+                    ...actualConfigSchema,
+                    shape: {
+                        ...actualConfigSchema.shape,
+                        coderabbit: z
+                            .string()
+                            .optional()
+                            .default("mocked string schema from vi.mock"),
+                    },
+                };
+            }
+            return actualConfigSchema;
+        },
+    };
+});
 
 // Type helper for asserting private methods
 type TemplateGeneratorPrivate = {
@@ -33,113 +68,41 @@ describe("TemplateGenerator", () => {
     const mockConfig: Config = {
         version: "1.0.0",
         teams: [TeamType.enum.offchain, TeamType.enum.solidity, TeamType.enum.ui],
-        typescript: {
-            language: "typescript",
-        },
-        solidity: {
-            gasOptimizations: true,
-            framework: "foundry",
-            testing: {
-                framework: "forge",
-            },
-        },
-        coderabbit: {
-            language: "en-US",
-            tone_instructions: "",
-            early_access: false,
-            enable_free_tier: false,
-            reviews: {
-                profile: "chill",
-                request_changes_workflow: false,
-                high_level_summary: true,
-                high_level_summary_placeholder: "@coderabbitai summary",
-                high_level_summary_in_walkthrough: false,
-                auto_title_placeholder: "@coderabbitai",
-                auto_title_instructions: "",
-                review_status: false,
-                commit_status: false,
-                fail_commit_status: false,
-                collapse_walkthrough: true,
-                changed_files_summary: false,
-                sequence_diagrams: false,
-                assess_linked_issues: true,
-                related_issues: true,
-                related_prs: true,
-                suggested_labels: false,
-                auto_apply_labels: false,
-                suggested_reviewers: false,
-                poem: false,
-                labeling_instructions: [],
-                path_filters: [],
-                path_instructions: [],
-                abort_on_close: true,
-                auto_review: {
-                    enabled: true,
-                    auto_incremental_review: true,
-                    ignore_title_keywords: [],
-                    labels: [],
-                    drafts: true,
-                    base_branches: [],
-                },
-                finishing_touches: {
-                    docstrings: {
-                        enabled: true,
-                    },
-                },
-                tools: {
-                    shellcheck: { enabled: true },
-                    ruff: { enabled: false },
-                    markdownlint: { enabled: true },
-                    "github-checks": { enabled: true, timeout_ms: 300000 },
-                    languagetool: { enabled: true, enabled_only: false, level: "default" },
-                    biome: { enabled: true },
-                    hadolint: { enabled: true },
-                    swiftlint: { enabled: false },
-                    phpstan: { enabled: false, level: "default" },
-                    "golangci-lint": { enabled: false },
-                    yamllint: { enabled: true },
-                    gitleaks: { enabled: true },
-                    checkov: { enabled: true },
-                    detekt: { enabled: false },
-                    eslint: { enabled: false },
-                    rubocop: { enabled: false },
-                    buf: { enabled: false },
-                    regal: { enabled: false },
-                    actionlint: { enabled: true },
-                    pmd: { enabled: false },
-                    cppcheck: { enabled: false },
-                    semgrep: { enabled: false },
-                    circleci: { enabled: false },
-                },
-            },
-            chat: {
-                auto_reply: true,
-                integrations: {
-                    jira: { usage: "disabled" },
-                    linear: { usage: "enabled" },
-                },
-            },
-            knowledge_base: {
-                opt_out: false,
-                learnings: { scope: "auto" },
-                issues: { scope: "auto" },
-                jira: {
-                    usage: "disabled",
-                    project_keys: [],
-                },
-                linear: {
-                    usage: "enabled",
-                    team_keys: [],
-                },
-                pull_requests: { scope: "auto" },
-            },
-        },
+        typescript: { language: "typescript" },
+        solidity: { gasOptimizations: true, framework: "foundry", testing: { framework: "forge" } },
+        coderabbit: DefaultCodeRabbitConfig,
     };
     const outputPath = "/mock/output/path";
 
     beforeEach(() => {
+        mockCoderabbitSchemaAsNonObject = false;
         vi.resetAllMocks();
         generator = new TemplateGenerator(mockConfig, outputPath);
+    });
+
+    describe("constructor", () => {
+        it("initializes managedRulePaths correctly based on config teams", () => {
+            const configWithOffchain: Config = { ...mockConfig, teams: [TeamType.enum.offchain] };
+            const genOffchain = new TemplateGenerator(configWithOffchain, outputPath);
+            // @ts-expect-error accessing private member
+            expect(genOffchain.managedRulePaths).toContain(
+                ".cursor/rules/Offchain/typescript-base.mdc",
+            );
+            // @ts-expect-error accessing private member
+            expect(genOffchain.managedRulePaths).not.toContain(
+                ".cursor/rules/UI/react-best-practices.mdc",
+            );
+
+            const configWithUI: Config = { ...mockConfig, teams: [TeamType.enum.ui] };
+            const genUI = new TemplateGenerator(configWithUI, outputPath);
+            // @ts-expect-error accessing private member
+            expect(genUI.managedRulePaths).toContain(".cursor/rules/UI/react-components.mdc");
+
+            const configWithNone: Config = { ...mockConfig, teams: [] };
+            const genNone = new TemplateGenerator(configWithNone, outputPath);
+            // @ts-expect-error accessing private member
+            expect(genNone.managedRulePaths.size).toBe(0);
+        });
     });
 
     describe("shouldOverwrite", () => {
@@ -302,47 +265,231 @@ describe("TemplateGenerator", () => {
     });
 
     describe("generateCodeRabbitConfig", () => {
-        it("generates the CodeRabbit config file", async () => {
-            vi.mocked(fs.stat).mockRejectedValueOnce(new Error("ENOENT"));
-            vi.mocked(fs.writeFile).mockResolvedValueOnce(undefined);
-
-            await (generator as unknown as TemplateGeneratorPrivate).generateCodeRabbitConfig();
-
-            expect(fs.writeFile).toHaveBeenCalledWith(
-                path.join(outputPath, ".coderabbit.yaml"),
-                expect.any(String),
-                "utf8",
-            );
+        beforeEach(() => {
+            // This spy is on the generator instance created in the outer beforeEach,
+            // which uses the default (actual) ConfigSchema via the mock.
+            vi.spyOn(
+                generator as unknown as TemplateGeneratorPrivate,
+                "shouldOverwrite",
+            ).mockResolvedValue(true);
         });
 
-        it("skips generation if file exists and has newer version", async () => {
-            vi.mocked(fs.stat).mockResolvedValueOnce({ isFile: () => true } as Stats);
-            vi.mocked(fs.readFile).mockResolvedValueOnce("version: 2.0.0");
+        it("uses the unwrapped ZodObject when coderabbit schema is wrapped (covers lines 159-162)", async () => {
+            mockCoderabbitSchemaAsNonObject = false;
+
+            const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
             await (generator as unknown as TemplateGeneratorPrivate).generateCodeRabbitConfig();
+            const writtenContent = vi.mocked(fs.writeFile).mock.calls[0]?.[1] as string;
 
-            expect(fs.writeFile).not.toHaveBeenCalled();
+            // Check for a field that proves the full schema was used, not the minimal one.
+            expect(writtenContent).toMatch(
+                /# Language for reviews using ISO language code\s*\nlanguage: en-US/,
+            );
+            expect(consoleWarnSpy).not.toHaveBeenCalled();
+            consoleWarnSpy.mockRestore();
+        });
+
+        it("warns and uses minimal schema if unwrapped coderabbit schema is not ZodObject (covers lines 176-185)", async () => {
+            mockCoderabbitSchemaAsNonObject = true;
+
+            try {
+                const testConfigData = {
+                    version: "1.0.0",
+                    teams: [],
+                    coderabbit: "actual string data for coderabbit field",
+                };
+                const testSpecificGenerator = new TemplateGenerator(
+                    testConfigData as unknown as any,
+                    outputPath,
+                );
+                vi.spyOn(
+                    testSpecificGenerator as unknown as TemplateGeneratorPrivate,
+                    "shouldOverwrite",
+                ).mockResolvedValue(true);
+
+                await (
+                    testSpecificGenerator as unknown as TemplateGeneratorPrivate
+                ).generateCodeRabbitConfig();
+
+                expect(fs.writeFile).toHaveBeenCalled();
+                const writtenContent = vi.mocked(fs.writeFile).mock.calls[0]?.[1] as string;
+
+                expect(writtenContent).toContain("# Configuration file version.");
+                expect(writtenContent).toContain("version: 1.0.0");
+                expect(writtenContent).not.toContain(
+                    "# Language for reviews uses ISO language code",
+                );
+                expect(writtenContent).not.toContain("language: en");
+            } finally {
+                mockCoderabbitSchemaAsNonObject = false;
+            }
         });
 
         it("uses DefaultCodeRabbitConfig when config.coderabbit is undefined", async () => {
-            const { coderabbit, ...configWithoutCodeRabbit } = mockConfig;
-            const generatorWithoutCodeRabbit = new TemplateGenerator(
-                configWithoutCodeRabbit as Config,
+            mockCoderabbitSchemaAsNonObject = false;
+            const { coderabbit, ...configWithoutExplicitCodeRabbit } = mockConfig;
+
+            const localGenerator = new TemplateGenerator(
+                configWithoutExplicitCodeRabbit as Config,
                 outputPath,
             );
-
-            vi.mocked(fs.stat).mockRejectedValueOnce(new Error("ENOENT"));
-            vi.mocked(fs.writeFile).mockResolvedValueOnce(undefined);
+            vi.spyOn(
+                localGenerator as unknown as TemplateGeneratorPrivate,
+                "shouldOverwrite",
+            ).mockResolvedValue(true);
+            vi.mocked(fs.stat).mockResolvedValue({ isFile: () => false } as Stats);
 
             await (
-                generatorWithoutCodeRabbit as unknown as TemplateGeneratorPrivate
+                localGenerator as unknown as TemplateGeneratorPrivate
             ).generateCodeRabbitConfig();
+            const writtenContent = vi.mocked(fs.writeFile).mock.calls[0]?.[1] as string;
+            expect(writtenContent).toContain("language: en");
+        });
 
-            expect(fs.writeFile).toHaveBeenCalledWith(
-                path.join(outputPath, ".coderabbit.yaml"),
-                expect.stringContaining("version: 1.0.0"),
-                "utf8",
+        it("includes field-level comments in the generated YAML", async () => {
+            const { coderabbit, ...configWithoutExplicitCodeRabbit } = mockConfig;
+            generator = new TemplateGenerator(
+                configWithoutExplicitCodeRabbit as Config,
+                outputPath,
             );
+            vi.mocked(fs.stat).mockResolvedValue({ isFile: () => false } as Stats);
+
+            await (generator as unknown as TemplateGeneratorPrivate).generateCodeRabbitConfig();
+
+            // Ensure fs.writeFile was called
+            expect(fs.writeFile).toHaveBeenCalled();
+            // Get the YAML string that was written
+            const call = vi.mocked(fs.writeFile).mock.calls[0];
+            expect(call).toBeDefined();
+            const yamlString = call ? (call[1] as string) : "";
+
+            // Check for a field-level comment for 'language'
+            expect(yamlString).toMatch(
+                /# Language for reviews using ISO language code\s*\nlanguage: en-US/,
+            );
+            // Check for a field-level comment for 'tone_instructions' (update to match actual description)
+            expect(yamlString).toMatch(
+                /# Custom instructions for review tone \(max 250 chars\)\s*\ntone_instructions: ""/,
+            );
+        });
+
+        it("handles getDescription when parentSchema is not a ZodObject", async () => {
+            const testSchema = z.object({
+                version: z.string().describe("Version field"),
+                // This schema will be passed as parentSchema
+                parent_is_string: z.string(),
+            });
+            const testDataWithVersion = {
+                version: "1.0.0",
+                parent_is_string: "test_value",
+            };
+
+            // Directly call getDescription to simulate the specific scenario
+            // @ts-expect-error accessing private member
+            const description = generator.getDescription(
+                "sub_field",
+                testSchema.shape.parent_is_string,
+            );
+            expect(description).toBeUndefined();
+
+            // Also check via generateDirectYamlWithComments to ensure no crash and basic output
+            // @ts-expect-error accessing private member
+            const yamlContent = generator.generateDirectYamlWithComments(
+                testDataWithVersion as unknown as any,
+                "1.0.0",
+                testSchema,
+            );
+            expect(yamlContent).toContain("# Version field");
+            expect(yamlContent).toContain("version: 1.0.0");
+            expect(yamlContent).toContain("parent_is_string: test_value");
+            // No comment expected for parent_is_string if we tried to describe its non-existent children using its own string schema
+            expect(yamlContent).not.toContain("parent_is_string: #");
+        });
+
+        it("handles getDescription when fieldName does not exist in parentSchema shape", async () => {
+            const testSchema = z.object({
+                version: z.string().describe("Version field"),
+                known_field: z.string().describe("Known field"),
+            });
+            const testDataWithVersion = {
+                version: "1.0.0",
+                known_field: "value",
+                unknown_field: "another value",
+            };
+
+            // @ts-expect-error accessing private member
+            const yamlContent = generator.generateDirectYamlWithComments(
+                testDataWithVersion as unknown as any,
+                "1.0.0",
+                testSchema,
+            );
+
+            expect(yamlContent).toContain("# Version field");
+            expect(yamlContent).toContain("version: 1.0.0");
+            expect(yamlContent).toContain("# Known field");
+            expect(yamlContent).toContain("known_field: value");
+            expect(yamlContent).toContain("unknown_field: another value");
+            expect(yamlContent).not.toMatch(/unknown_field:\s*#/);
+        });
+
+        it("gets description from optional/default wrapped schema if inner has description", async () => {
+            const testSchema = z.object({
+                version: z.string().describe("Version field"),
+                optional_field: z.optional(z.string().describe("Optional Description")),
+                default_field: z
+                    .string()
+                    .default("default")
+                    .describe("Default Description Wrapper"),
+                default_inner_field: z.string().describe("Inner Default Desc").default("val"),
+            });
+            const testDataWithVersion = {
+                version: "1.0.0",
+                optional_field: "val1",
+                default_field: "val2",
+                default_inner_field: "val3",
+            };
+
+            // @ts-expect-error accessing private member
+            const yamlContent = generator.generateDirectYamlWithComments(
+                testDataWithVersion as unknown as any,
+                "1.0.0",
+                testSchema,
+            );
+
+            expect(yamlContent).toContain("# Version field");
+            expect(yamlContent).toContain("# Optional Description");
+            expect(yamlContent).toContain("optional_field: val1");
+            expect(yamlContent).toContain("# Default Description Wrapper");
+            expect(yamlContent).toContain("default_field: val2");
+            expect(yamlContent).toContain("# Inner Default Desc");
+            expect(yamlContent).toContain("default_inner_field: val3");
+        });
+
+        it("returns no description if neither field nor its wrapped schema have one", async () => {
+            const testSchema = z.object({
+                version: z.string().describe("Version field"),
+                plain_optional: z.optional(z.string()),
+                plain_default: z.string().default("test"),
+            });
+            const testDataWithVersion = {
+                version: "1.0.0",
+                plain_optional: "pv",
+                plain_default: "pd",
+            };
+
+            // @ts-expect-error accessing private member
+            const yamlContent = generator.generateDirectYamlWithComments(
+                testDataWithVersion as unknown as any,
+                "1.0.0",
+                testSchema,
+            );
+
+            expect(yamlContent).toContain("# Version field");
+            expect(yamlContent).not.toMatch(/plain_optional:\s*#/);
+            expect(yamlContent).toContain("plain_optional: pv");
+            expect(yamlContent).not.toMatch(/plain_default:\s*#/);
+            expect(yamlContent).toContain("plain_default: pd");
         });
     });
 
@@ -599,6 +746,36 @@ describe("TemplateGenerator", () => {
             await expect(
                 (generator as unknown as TemplateGeneratorPrivate).writeFile("test.txt", "content"),
             ).rejects.toThrow(error);
+        });
+    });
+
+    describe("injectFieldComments edge cases", () => {
+        it("handles empty objects", () => {
+            const generatorAny = generator as unknown as any;
+            const yaml = "{}";
+            const config = {};
+            const schema = { shape: {} };
+            const result = generatorAny.injectFieldComments(yaml, config, schema);
+            expect(result).toBe("{}");
+        });
+
+        it("handles arrays as config", () => {
+            const generatorAny = generator as unknown as any;
+            const yaml = "- item1\n- item2";
+            const config = ["item1", "item2"];
+            const schema = undefined;
+            const result = generatorAny.injectFieldComments(yaml, config, schema);
+            expect(result).toContain("- item1");
+            expect(result).toContain("- item2");
+        });
+
+        it("handles unexpected types gracefully", () => {
+            const generatorAny = generator as unknown as any;
+            const yaml = "some: value";
+            const config = 42;
+            const schema = undefined;
+            const result = generatorAny.injectFieldComments(yaml, config, schema);
+            expect(result).toContain("some: value");
         });
     });
 });

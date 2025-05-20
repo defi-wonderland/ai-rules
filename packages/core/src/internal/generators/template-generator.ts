@@ -1,10 +1,11 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as yaml from "yaml";
+import { z, ZodArray, ZodDefault, ZodObject, ZodOptional, ZodType, ZodTypeAny } from "zod";
 
 import type { Config } from "../schemas/config.js";
 import type { VersionType } from "../utils/index.js";
-import { CodeRabbitConfig, DefaultCodeRabbitConfig } from "../schemas/index.js";
+import { CodeRabbitConfig, ConfigSchema, DefaultCodeRabbitConfig } from "../schemas/index.js";
 import { reactRules, solidityRules, typescriptRules } from "../templates/cursor/index.js";
 import { compareVersions } from "../utils/index.js";
 
@@ -143,16 +144,288 @@ export class TemplateGenerator {
             return;
         }
 
-        const config: CodeRabbitConfig = {
+        const dataForYaml = {
+            version: currentVersion,
             ...(this.config.coderabbit ?? DefaultCodeRabbitConfig),
         };
 
-        const yamlContent = yaml.stringify({
-            ...config,
-            version: currentVersion,
-        });
+        // Define a schema for the YAML structure, including the version field
+        // This ensures comments can be generated for the version field as well.
+        const versionFieldSchema = z.string().describe("Configuration file version.");
+        const coderabbitObjectSchema = ConfigSchema.shape.coderabbit;
+        let schemaForYaml: ZodObject<Record<string, ZodType<unknown>>, "strip", ZodTypeAny>;
+
+        if (coderabbitObjectSchema instanceof ZodObject) {
+            schemaForYaml = z.object({
+                version: versionFieldSchema,
+                ...coderabbitObjectSchema.shape,
+            }) as ZodObject<Record<string, ZodType<unknown>>, "strip", ZodTypeAny>;
+        } else {
+            // Fallback if CodeRabbit schema is not an object (e.g. optional or default)
+            // This case might need specific handling based on actual ConfigSchema structure
+            // For now, creating a simple schema, assuming CodeRabbit itself is an object schema effectively
+            const unwrappedCoderabbitSchema = this.safelyGetInnerSchema(coderabbitObjectSchema);
+            if (unwrappedCoderabbitSchema instanceof ZodObject) {
+                schemaForYaml = z.object({
+                    version: versionFieldSchema,
+                    ...unwrappedCoderabbitSchema.shape,
+                }) as ZodObject<Record<string, ZodType<unknown>>, "strip", ZodTypeAny>;
+            } else {
+                // This should never happen if DefaultCodeRabbitConfig is an object
+                // and CodeRabbit in ConfigSchema is z.object(...).default(...)
+                console.warn(
+                    "Could not construct extended schema for .coderabbit.yaml with version. Defaulting to CodeRabbit schema only for comments.",
+                );
+                // Minimal schema if unwrapping fails
+                schemaForYaml = z.object({ version: versionFieldSchema }) as ZodObject<
+                    Record<string, ZodType<unknown>>,
+                    "strip",
+                    ZodTypeAny
+                >;
+            }
+        }
+
+        const yamlContent = this.generateDirectYamlWithComments(
+            dataForYaml, // Pass the combined data
+            currentVersion, // Still needed for the header comment
+            schemaForYaml, // Pass the schema that includes the version
+        );
+
         await this.writeFile(filePath, yamlContent);
     }
+
+    /**
+     * Generates a YAML string with comments directly using the yaml library's AST.
+     * @param config The CodeRabbit configuration object (without version)
+     * @param configVersion The version string for the header
+     * @param schema The Zod schema used to extract descriptions
+     * @returns A formatted YAML string with comments
+     */
+    private generateDirectYamlWithComments(
+        config: CodeRabbitConfig & { version: string },
+        configVersion: string,
+        schema?: ZodType<unknown>,
+    ): string {
+        const doc = new yaml.Document();
+
+        doc.commentBefore = ` AI Rules configuration file - version ${configVersion}`;
+
+        const innerSchema = this.safelyGetInnerSchema(schema);
+        doc.contents = this.buildYamlNode(config, innerSchema);
+
+        // Get the basic YAML without field comments
+        const basicYaml = doc.toString({ lineWidth: 0, singleQuote: false });
+
+        // Now manually add field-level comments using injectFieldComments
+        // Provide a fallback empty object schema if none is available
+        const effectiveSchema = schema || innerSchema || z.object({});
+        return this.injectFieldComments(basicYaml, config, effectiveSchema);
+    }
+
+    /**
+     * Injects field-level comments above all fields (including nested) in the YAML string using Zod schema descriptions.
+     */
+    private injectFieldComments(
+        yamlString: string,
+        config: unknown,
+        schema: ZodType<unknown>,
+        indentLevel = 0,
+    ): string {
+        const lines = yamlString.split("\n");
+        const resultLines: string[] = [];
+        const indent = "  ".repeat(indentLevel);
+        const innerSchema = this.safelyGetInnerSchema(schema);
+        const isObject = (val: unknown): val is Record<string, unknown> =>
+            typeof val === "object" && val !== null && !Array.isArray(val);
+
+        const getFieldDescriptions = (
+            obj: unknown,
+            sch: ZodType<unknown>,
+        ): Record<string, string> => {
+            const descs: Record<string, string> = {};
+            const unwrappedSchema = this.safelyGetInnerSchema(sch);
+            if (unwrappedSchema instanceof ZodObject && isObject(obj)) {
+                for (const key of Object.keys(obj)) {
+                    const desc = this.getDescription(key, unwrappedSchema);
+                    if (desc) descs[key] = desc;
+                }
+            }
+            return descs;
+        };
+
+        const fieldDescriptions = getFieldDescriptions(config, schema);
+        let i = 0;
+        while (i < lines.length) {
+            const line = lines[i];
+            if (typeof line === "string") {
+                const fieldMatch = new RegExp(`^${indent}("?[^":]+"?):`).exec(line);
+                const rawKey =
+                    fieldMatch && typeof fieldMatch[1] === "string"
+                        ? fieldMatch[1].replace(/"/g, "")
+                        : undefined;
+                const fieldName = rawKey;
+                if (
+                    fieldName &&
+                    Object.prototype.hasOwnProperty.call(fieldDescriptions, fieldName)
+                ) {
+                    const description = fieldDescriptions[fieldName];
+                    resultLines.push(`${indent}# ${description}`);
+                }
+                resultLines.push(line);
+
+                // If this field is an object or array, recursively process its block
+                if (fieldName && isObject(config)) {
+                    const value = config[fieldName];
+                    let fieldSchema: ZodType<unknown> | undefined;
+                    if (innerSchema instanceof ZodObject) {
+                        const shape = innerSchema.shape as Record<string, ZodType<unknown>>;
+                        fieldSchema = shape[fieldName];
+                    }
+                    const actualFieldSchema = this.safelyGetInnerSchema(fieldSchema);
+                    if (isObject(value) && actualFieldSchema) {
+                        // Find the block of lines for this object
+                        let j = i + 1;
+                        const childIndent = indent + "  ";
+                        while (
+                            j < lines.length &&
+                            typeof lines[j] === "string" &&
+                            (lines[j]!.startsWith(childIndent) || lines[j]!.trim() === "")
+                        ) {
+                            j++;
+                        }
+                        const childBlock = lines.slice(i + 1, j).join("\n");
+                        const commentedChild = this.injectFieldComments(
+                            childBlock,
+                            value,
+                            actualFieldSchema,
+                            indentLevel + 1,
+                        );
+                        if (childBlock.length > 0) {
+                            resultLines.push(commentedChild);
+                        }
+                        i = j - 1;
+                    }
+                }
+            }
+            i++;
+        }
+        return resultLines.join("\n");
+    }
+
+    /**
+     * Recursively builds YAML nodes (Scalar, YAMLMap, YAMLSeq) from data and its Zod schema.
+     * @param currentData The current data segment (primitive, object, or array).
+     * @param currentZodSchema The Zod schema for the current data segment.
+     * @returns A yaml.Node representing the data.
+     */
+    private buildYamlNode(currentData: unknown, currentZodSchema?: ZodType<unknown>): yaml.Node {
+        // Handle primitives
+        if (
+            currentData === null ||
+            (typeof currentData !== "object" && !Array.isArray(currentData))
+        ) {
+            return new yaml.Scalar(currentData);
+        }
+
+        // Handle arrays
+        if (Array.isArray(currentData)) {
+            const seq = new yaml.YAMLSeq();
+            const itemSchema =
+                currentZodSchema instanceof ZodArray
+                    ? (currentZodSchema.element as ZodType<unknown>)
+                    : undefined;
+            currentData.forEach((item) => {
+                seq.add(this.buildYamlNode(item, itemSchema));
+            });
+            return seq;
+        }
+
+        // Handle objects
+        const map = new yaml.YAMLMap();
+        if (typeof currentData === "object" && currentData !== null) {
+            const dataAsRecord = currentData as Record<string, unknown>;
+            for (const [key, value] of Object.entries(dataAsRecord)) {
+                // Pass currentZodSchema directly; getDescription will unwrap and check type
+                const fieldDescription = this.getDescription(key, currentZodSchema);
+
+                let fieldSchemaForValue: ZodType<unknown> | undefined;
+                if (currentZodSchema instanceof ZodObject) {
+                    const shape = currentZodSchema.shape as Record<string, ZodType<unknown>>;
+                    fieldSchemaForValue = shape[key];
+                }
+                const actualFieldSchema = this.safelyGetInnerSchema(fieldSchemaForValue);
+
+                const valueNode = this.buildYamlNode(value, actualFieldSchema);
+                const pair = new yaml.Pair(key, valueNode);
+
+                // Add field description as comment
+                if (fieldDescription) {
+                    (pair as unknown as { commentBefore: string }).commentBefore =
+                        fieldDescription.trim();
+                }
+                map.items.push(pair);
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Helper to safely get an inner schema
+     * @param s The schema to unwrap
+     * @returns The inner schema if wrapped, otherwise the original schema
+     */
+    private safelyGetInnerSchema = <T>(s?: ZodType<T>): ZodType<T> | undefined => {
+        if (!s) return undefined;
+
+        let schema = s;
+        // Unwrap nested ZodDefault/ZodOptional schemas
+        while (schema instanceof ZodDefault || schema instanceof ZodOptional) {
+            schema = schema._def.innerType as ZodType<T>;
+        }
+        return schema;
+    };
+
+    /**
+     * Gets the description from a schema field
+     * @param fieldName The field name to get the description for
+     * @param parentSchema The parent schema containing the field
+     * @returns The field description if found
+     */
+    private getDescription = (
+        fieldName: string,
+        parentSchema?: ZodType<unknown>,
+    ): string | undefined => {
+        // Safely get the innermost schema, unwrapping ZodDefault/ZodOptional
+        const actualSchema = this.safelyGetInnerSchema(parentSchema);
+
+        if (!actualSchema || !(actualSchema instanceof ZodObject)) {
+            return undefined;
+        }
+
+        const shape = actualSchema.shape as Record<string, ZodType<unknown>>;
+        const fieldSchema = shape[fieldName];
+
+        if (!fieldSchema) return undefined;
+
+        // Try to get description from the field schema itself
+        const schemaWithDesc = fieldSchema as unknown as { description?: string };
+        if (schemaWithDesc.description) {
+            return schemaWithDesc.description;
+        }
+
+        // If no direct description, check if it's wrapped and get description from inner schema
+        if (fieldSchema instanceof ZodDefault || fieldSchema instanceof ZodOptional) {
+            const innerType = this.safelyGetInnerSchema(fieldSchema);
+            if (innerType) {
+                const innerWithDesc = innerType as unknown as { description?: string };
+                if (innerWithDesc.description) {
+                    return innerWithDesc.description;
+                }
+            }
+        }
+
+        return undefined;
+    };
 
     /**
      * Generates Cursor rule files in team-specific subdirectories
