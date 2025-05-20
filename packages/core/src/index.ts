@@ -18,8 +18,10 @@ import { baseConfig } from "./internal/templates/defaults/index.js";
 /**
  * Thrown when `ai-rules` cannot locate the project root.
  *
- * The search walks up the directory tree looking for a `package.json`
- * containing a `workspaces` field
+ * The search walks up the directory tree looking for, in order of preference:
+ * 1. A `pnpm-workspace.yaml` file.
+ * 2. A `package.json` file with a "workspaces" field.
+ * 3. A `package.json` file with a "name" field (as a fallback for single package projects).
  */
 class ProjectRootNotFound extends Error {
     constructor(message: string = "Could not find project root directory") {
