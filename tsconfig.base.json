@@ -17,10 +17,12 @@
         "useUnknownInCatchVariables": true,
         "forceConsistentCasingInFileNames": true,
         "noImplicitOverride": true,
-        /* If transpiling with TypeScript: */
+        /* Transpiling with TypeScript: */
         "module": "NodeNext",
         "sourceMap": true,
-        /* If your code doesn't run in the DOM: */
-        "lib": ["es2022"]
+        /* Code doesn't run in the DOM: */
+        "lib": ["es2022"],
+        /* Specify Type Definitions */
+        "types": ["node", "vitest/globals"]
     }
 }

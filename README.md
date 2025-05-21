@@ -1,109 +1,133 @@
-# ts-turborepo-boilerplate
+# AI Rules
 
-## Features
-
-### Boilerplate monorepo setup
-
-Quickly start developing your offchain monorepo project with
-minimal configuration overhead using Turborepo
-
-### Sample library with Viem
-
-Simple provider that uses Viem client to query account balances
-
-### Sample contracts with Foundry
-
-Basic Greeter contract with an external interface
-
-Foundry configuration out-of-the-box
-
-### Sample app that consumes the library
-
-How much ETH do Vitalik and the Zero address hold together?
-
-### Testing
-
-Unit test setup with Vitest framework
-
-### Lint and format
-
-Use ESLint and Prettier to easily find issues as you code
-
-### Github workflows CI
-
-Lint code and check commit messages format on every push.
-
-Run all tests and see the coverage before merging changes.
+A script for standardizing AI configuration across teams. This tool helps manage and maintain consistent `.coderabbit.yaml` and `.cursor/rules` configurations.
 
 ## Overview
 
-This repository is a monorepo consisting of 2 packages and 1 app:
+This package provides a simple script to generate AI configuration files for your projects. It generates a `.coderabbit.yaml` file and a set of `.cursor/rules` files. Feel free to delete any that do not apply to your project.
 
--   [`@ts-turborepo-boilerplate/contracts`](./packages/contracts): A library for writing all required smart contracts
--   [`@ts-turborepo-boilerplate/sample-lib`](./packages/sample-lib): A sample library for querying account balances
--   [`@ts-turborepo-boilerplate/sample-app`](./apps/sample-app): A demo sample app that uses the sample-lib
+## Installation & Usage
 
-## 📋 Prerequisites
-
--   Ensure you have `node 20` and `pnpm 9.7.1` installed.
-
-## Tech stack
-
--   [pnpm](https://pnpm.io/): package and workspace manager
--   [turborepo](https://turbo.build/repo/docs): for managing the monorepo and the build system
--   [foundry](https://book.getfoundry.sh/forge/): for writing Solidity smart contracts
--   [husky](https://typicode.github.io/husky/): tool for managing git hooks
--   tsc: for transpiling TS and building source code
--   [prettier](https://prettier.io/): code formatter
--   [eslint](https://typescript-eslint.io/): code linter
--   [vitest](https://vitest.dev/): modern testing framework
--   [Viem](https://viem.sh/): lightweight library to interface with EVM based blockchains
-
-### Configuring Prettier sort import plugin
-
-You can further add sorting rules for your monorepo, for example in `.prettierrc` you can add:
-
-```json
-    ...
-    "importOrder": [
-        "<TYPES>",
-        ...
-        "",
-        "<TYPES>^@myproject", //added
-        "^@myproject/(.*)$", //added
-        "",
-        ...
-    ],
-    ...
-```
-
-We use [IanVs prettier-plugin-sort-imports](https://github.com/IanVS/prettier-plugin-sort-imports)
-
-## Available Scripts
-
-### `create-package`
-
-The `create-package` script allows you to create a new package within the `packages` directory. It automates the setup of a new package with the necessary directory structure and initial files scaffolded.
-
-#### Usage
-
-To create a new package, run the following command:
+You can run the script directly with npx (no install required):
 
 ```bash
-pnpm run create-package <package-name>
+npx @defi-wonderland/ai-rules
 ```
 
-Replace `<package-name>` with your desired package name. This command will generate the package directory with predefined templates and configuration files.
+Or, after installing globally:
+
+```bash
+pnpm add -g @defi-wonderland/ai-rules
+ai-rules
+```
+
+Or, if testing the ai-rules repo locally
+
+```bash
+pnpm local:ai-rules
+```
+
+## Generated Files
+
+The script will generate:
+
+1. `.coderabbit.yaml` - Configuration for the CodeRabbit AI code review tool
+2. `.cursor/rules/*` - Team-specific best practices for Cursor AI coding assistant
+
+## Features
+
+-   Supports multiple tech stacks with best practices:
+    -   Solidity
+    -   TypeScript
+    -   React/UI
+-   Configuration uses semantic versioning to track changes
+-   Typesafe configuration generation
+
+## How to Add New Rules
+
+Adding new .cursor/rules is straightforward, even if you're not primarily a TypeScript developer. Rules generally involve defining some metadata and the rule content in Markdown.
+
+Here's how you can contribute a new rule:
+
+1.  **Understand Rule Structure**:
+
+    -   Rules are defined as objects within arrays in [`packages/core/src/internal/templates/cursor/index.ts`](packages/core/src/internal/templates/cursor/index.ts).
+    -   There are typically different arrays for different rule categories (e.g., `typescriptRules`, `solidityRules`, `reactRules`).
+    -   Each rule object has properties like `name`, `description`, `globs` (file patterns it applies to), and `content` (the actual rule text in Markdown).
+
+2.  **Locate the Correct Rule Set**:
+
+    -   Open [`packages/core/src/internal/templates/cursor/index.ts`](packages/core/src/internal/templates/cursor/index.ts).
+    -   Find the array corresponding to the category of your new rule (e.g., if it's a Solidity rule, look for `solidityRules`).
+
+3.  **Add Your Rule Definition**:
+
+    -   To the chosen array, add a new object for your rule. For example:
+
+        ```typescript
+        {
+            name: "your-new-rule-name", // This becomes the .mdc filename (e.g., your-new-rule-name.mdc)
+            description: "A brief description of what this rule checks or suggests.",
+            globs: ["*.sol"], // File patterns this rule applies to (e.g., all Solidity files)
+            content: `
+        ### Your New Rule Title
+
+        This is the actual content of your rule.
+        You can use Markdown here to explain the rule, provide examples, etc.
+        `,
+        }
+        ```
+
+4.  **Content (`.mdc` file format)**:
+
+    -   The `content` string is what will be written into a `.mdc` file (Markdown with frontmatter).
+    -   The generator script automatically adds frontmatter like `description`, `globs`, and `version` based on your definition and the package version.
+
+5.  **Generating the Rule File**:
+
+    -   After adding your rule definition, you need to run the generation script. This script reads these definitions and creates/updates the actual `.mdc` rule files in the [`.cursor/rules/`](.cursor/rules/) directory of the project where `ai-rules` is used.
+    -   To test this locally within the `ai-rules` repository itself or in a project using your development version of `ai-rules`:
+        -   Build the `@defi-wonderland/ai-rules` package: `pnpm run build` (from the root or within [`packages/core`](packages/core)).
+        -   Run the generator: `pnpm exec ai-rules` (from the root of a project where you want to generate the rules, or link your local `ai-rules` package and run `ai-rules`).
+        -   This will create a new file like [`.cursor/rules/Solidity/your-new-rule-name.mdc`](.cursor/rules/Solidity/your-new-rule-name.mdc).
+
+6.  **Testing (Optional but Recommended)**:
+
+    -   If your rule involves changes to configuration schemas (e.g., adding new configurable options in `.coderabbit.yaml`), you might need to update schemas in [`packages/core/src/internal/schemas/config.ts`](packages/core/src/internal/schemas/config.ts) and add relevant tests in [`packages/core/test/`](packages/core/test/).
+    -   For simple content-only rules, ensure the generated `.mdc` file looks correct.
+
+7.  **Commit and Push**:
+    -   Add the changes in [`packages/core/src/internal/templates/cursor/index.ts`](packages/core/src/internal/templates/cursor/index.ts) and any newly generated/updated rule files to your commit.
+
+If you still need help, feel free to message the Offchain Team!
+
+## Release Process
+
+When preparing a new release of the package, the version number must be manually updated. This is because the current publishing workflow (`.github/workflows/publish.yml`) publishes the version as it exists in the `package.json` files.
+
+To release a new version:
+
+1.  **Determine the new version number**: Following [Semantic Versioning](https://semver.org/) (e.g., `vX.Y.Z`), decide on the new version based on the changes (patch, minor, or major).
+2.  **Update `package.json`**: Manually edit [`packages/core/package.json`](packages/core/package.json) and update the `"version"` field to the new version number.
+    ```json
+    // packages/core/package.json
+    {
+        "name": "@defi-wonderland/ai-rules",
+        "version": "NEW_VERSION_HERE" // e.g., "0.1.0"
+        // ... rest of the file
+    }
+    ```
+3.  **Create a GitHub Release**: Once the version update is on the main branch, go to the repository's GitHub page, navigate to "Releases", and draft a new release.
+    -   Choose a tag for your release that matches the new version (e.g., `vNEW_VERSION_HERE`).
+    -   Title your release (e.g., `vNEW_VERSION_HERE`).
+    -   Describe the changes in the release.
+    -   Publishing the release will trigger the `publish.yml` workflow, which builds and publishes the package with the new version to npm.
 
 ## Contributing
 
 Wonderland is a team of top Web3 researchers, developers, and operators who believe that the future needs to be open-source, permissionless, and decentralized.
 
 [DeFi sucks](https://defi.sucks), but Wonderland is here to make it better.
-
-### 💻 Conventional Commits
-
-We follow the Conventional Commits [specification](https://www.conventionalcommits.org/en/v1.0.0/#specification).
 
 ## License
 

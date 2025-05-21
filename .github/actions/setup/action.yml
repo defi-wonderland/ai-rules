@@ -14,8 +14,3 @@ runs:
           with:
               node-version: 20
               cache: "pnpm"
-
-        - name: Use foundry
-          uses: foundry-rs/foundry-toolchain@v1
-          with:
-              version: nightly
