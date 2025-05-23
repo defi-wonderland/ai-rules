@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// The above shebang directive tells the system to use the node interpreter found in the user's PATH to run the script
 import("../dist/index.js")
     .then((mod) => mod.run())
     .catch((err) => {
