@@ -11,9 +11,6 @@ importers:
                 specifier: 2.8.0
                 version: 2.8.0
         devDependencies:
-            "@babel/helpers":
-                specifier: 7.27.1
-                version: 7.27.1
             "@commitlint/config-conventional":
                 specifier: 19.4.1
                 version: 19.4.1
@@ -150,13 +147,6 @@ packages:
         resolution:
             {
                 integrity: sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow==,
-            }
-        engines: { node: ">=6.9.0" }
-
-    "@babel/helpers@7.27.1":
-        resolution:
-            {
-                integrity: sha512-FCvFTm0sWV8Fxhpp2McP5/W53GPllQ9QeQ7SiqGWjMf/LVG07lFa5+pgK05IRhVwtvafT22KF+ZSnM9I545CvQ==,
             }
         engines: { node: ">=6.9.0" }
 
@@ -3682,11 +3672,6 @@ snapshots:
     "@babel/helper-validator-identifier@7.24.7": {}
 
     "@babel/helper-validator-identifier@7.27.1": {}
-
-    "@babel/helpers@7.27.1":
-        dependencies:
-            "@babel/template": 7.27.2
-            "@babel/types": 7.27.1
 
     "@babel/highlight@7.24.7":
         dependencies:
