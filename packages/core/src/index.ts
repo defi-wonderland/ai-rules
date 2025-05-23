@@ -1,6 +1,3 @@
-#!/usr/bin/env node
-// The above shebang directive tells the system to use the node interpreter found in the user's PATH to run the script
-// This allows users to run the script directly rather than explicitly calling node
 import * as fs from "fs/promises";
 import * as path from "path";
 import { fileURLToPath } from "url";
