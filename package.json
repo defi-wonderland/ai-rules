@@ -1,6 +1,6 @@
 {
     "name": "ai-rules",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "private": true,
     "description": "AI configuration file generator",
     "homepage": "https://github.com/defi-wonderland/ai-rules",
